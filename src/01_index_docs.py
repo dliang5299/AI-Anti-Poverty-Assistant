@@ -9,10 +9,10 @@ import faiss
 
 s3 = boto3.client("s3")
 
-BUCKET = "YOUR_BUCKET"
+BUCKET = ""
 PREFIX = "rag/raw"          # where the raw docs live
 INDEX_PREFIX = "rag/index"  # where to write the FAISS index + metadata
-EMBED_MODEL_NAME = "sentence-transformers/all-MiniLM-L6-v2"  # swap if you prefer
+EMBED_MODEL_NAME = ""  # swap if you prefer
 
 def s3_list_objects(bucket, prefix):
     paginator = s3.get_paginator("list_objects_v2")
