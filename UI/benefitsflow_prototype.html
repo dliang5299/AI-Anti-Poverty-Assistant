@@ -1,0 +1,1300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BenefitsFlow - Your Guide to California Public Benefits</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary-color: #4A90A4;
+            --secondary-color: #F4A261;
+            --bg-color: #FAFAFA;
+            --text-color: #2D3436;
+            --light-gray: #E8E8E8;
+            --success: #2ECC71;
+            --warning: #F39C12;
+            --white: #FFFFFF;
+            --user-bubble: #E3F2FD;
+            --bot-bubble: #FFF8E7;
+            --shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.6;
+        }
+
+        /* Header */
+        .header {
+            background: linear-gradient(135deg, var(--primary-color) 0%, #2c5f6f 100%);
+            color: white;
+            padding: 1rem 2rem;
+            box-shadow: var(--shadow);
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 100;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo-container {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .logo-placeholder {
+            width: 50px;
+            height: 50px;
+            background: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+        }
+
+        .brand-name {
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+
+        .brand-tagline {
+            font-size: 0.85rem;
+            opacity: 0.9;
+        }
+
+        .menu-btn {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1.5rem;
+            cursor: pointer;
+            display: none;
+        }
+
+        /* Main Container */
+        .container {
+            display: flex;
+            margin-top: 80px;
+            height: calc(100vh - 80px);
+            max-width: 1400px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 280px;
+            background: white;
+            border-right: 1px solid var(--light-gray);
+            padding: 1.5rem;
+            overflow-y: auto;
+            transition: transform 0.3s ease;
+        }
+
+        .sidebar.hidden {
+            transform: translateX(-100%);
+        }
+
+        .sidebar h3 {
+            color: var(--primary-color);
+            margin-bottom: 1rem;
+            font-size: 1.1rem;
+        }
+
+        .sidebar-section {
+            margin-bottom: 2rem;
+        }
+
+        .program-list {
+            list-style: none;
+        }
+
+        .program-list li {
+            padding: 0.5rem 0;
+            border-bottom: 1px solid var(--light-gray);
+            color: var(--text-color);
+        }
+
+        .program-list li:last-child {
+            border-bottom: none;
+        }
+
+        .sidebar-btn {
+            width: 100%;
+            padding: 0.75rem;
+            margin: 0.5rem 0;
+            border: 1px solid var(--light-gray);
+            background: white;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.95rem;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .sidebar-btn:hover {
+            background: var(--bg-color);
+            border-color: var(--primary-color);
+        }
+
+        .privacy-notice {
+            background: #f0f9ff;
+            padding: 1rem;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            color: #0c4a6e;
+            margin-top: 1rem;
+        }
+
+        /* Main Chat Area */
+        .chat-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: white;
+            position: relative;
+        }
+
+        /* Landing View */
+        .landing-view {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 3rem 2rem;
+            text-align: center;
+            height: 100%;
+        }
+
+        .landing-view.hidden {
+            display: none;
+        }
+
+        .hero-icon {
+            width: 120px;
+            height: 120px;
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+        }
+
+        .landing-view h1 {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            color: var(--primary-color);
+        }
+
+        .landing-view p {
+            font-size: 1.2rem;
+            color: #666;
+            max-width: 600px;
+            margin-bottom: 3rem;
+        }
+
+        .quick-start-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            width: 100%;
+            max-width: 900px;
+            margin-bottom: 2rem;
+        }
+
+        .quick-card {
+            background: white;
+            padding: 2rem 1.5rem;
+            border-radius: 12px;
+            box-shadow: var(--shadow);
+            cursor: pointer;
+            transition: all 0.3s;
+            border: 2px solid transparent;
+        }
+
+        .quick-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 20px rgba(0,0,0,0.15);
+            border-color: var(--primary-color);
+        }
+
+        .quick-card-icon {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .quick-card h3 {
+            font-size: 1.2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .quick-card p {
+            font-size: 0.9rem;
+            color: #666;
+            margin: 0;
+        }
+
+        .trust-badges {
+            display: flex;
+            gap: 2rem;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-top: 2rem;
+        }
+
+        .trust-badge {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        /* Chat Messages */
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 2rem;
+            display: none;
+        }
+
+        .chat-messages.active {
+            display: block;
+        }
+
+        .message {
+            display: flex;
+            margin-bottom: 1.5rem;
+            animation: fadeInUp 0.3s ease;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .message.user {
+            justify-content: flex-end;
+        }
+
+        .message-content {
+            max-width: 70%;
+            padding: 1rem 1.25rem;
+            border-radius: 18px;
+            position: relative;
+        }
+
+        .message.bot .message-content {
+            background: var(--bot-bubble);
+            border-bottom-left-radius: 4px;
+        }
+
+        .message.user .message-content {
+            background: var(--user-bubble);
+            border-bottom-right-radius: 4px;
+        }
+
+        .message-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            margin: 0 0.75rem;
+            flex-shrink: 0;
+        }
+
+        .message.bot .message-avatar {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .message.user .message-avatar {
+            background: var(--secondary-color);
+            color: white;
+        }
+
+        .source-tag {
+            display: inline-block;
+            background: #e0f2fe;
+            color: #0369a1;
+            padding: 0.25rem 0.75rem;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            margin-top: 0.5rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .source-tag:hover {
+            background: #bae6fd;
+        }
+
+        .quick-replies {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+            margin-top: 0.75rem;
+        }
+
+        .quick-reply-btn {
+            background: white;
+            border: 1px solid var(--primary-color);
+            color: var(--primary-color);
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .quick-reply-btn:hover {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .typing-indicator {
+            display: none;
+            padding: 1rem;
+        }
+
+        .typing-indicator.active {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .typing-dot {
+            width: 8px;
+            height: 8px;
+            background: var(--primary-color);
+            border-radius: 50%;
+            animation: typing 1.4s infinite;
+        }
+
+        .typing-dot:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .typing-dot:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+
+        @keyframes typing {
+            0%, 60%, 100% {
+                transform: translateY(0);
+            }
+            30% {
+                transform: translateY(-10px);
+            }
+        }
+
+        /* Chat Input */
+        .chat-input-container {
+            padding: 1.5rem;
+            background: white;
+            border-top: 1px solid var(--light-gray);
+        }
+
+        .chat-input-wrapper {
+            display: flex;
+            gap: 0.75rem;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .chat-input {
+            flex: 1;
+            padding: 1rem 1.25rem;
+            border: 2px solid var(--light-gray);
+            border-radius: 24px;
+            font-size: 1rem;
+            font-family: inherit;
+            resize: none;
+            outline: none;
+            transition: border-color 0.2s;
+            max-height: 150px;
+        }
+
+        .chat-input:focus {
+            border-color: var(--primary-color);
+        }
+
+        .send-btn {
+            width: 50px;
+            height: 50px;
+            background: var(--primary-color);
+            border: none;
+            border-radius: 50%;
+            color: white;
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .send-btn:hover {
+            background: #3a7a8a;
+            transform: scale(1.05);
+        }
+
+        .send-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: scale(1);
+        }
+
+        /* Action Buttons */
+        .action-buttons {
+            position: fixed;
+            bottom: 100px;
+            right: 2rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            z-index: 50;
+        }
+
+        .action-btn {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .action-btn:hover {
+            transform: scale(1.1);
+        }
+
+        .action-btn.checklist {
+            background: var(--success);
+            color: white;
+        }
+
+        .action-btn.restart {
+            background: var(--warning);
+            color: white;
+        }
+
+        .action-btn.feedback {
+            background: var(--secondary-color);
+            color: white;
+        }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 200;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+            animation: fadeIn 0.2s;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 16px;
+            max-width: 600px;
+            width: 100%;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            animation: slideUp 0.3s;
+        }
+
+        @keyframes slideUp {
+            from {
+                transform: translateY(50px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .modal-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid var(--light-gray);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: linear-gradient(135deg, var(--primary-color), #2c5f6f);
+            color: white;
+            border-radius: 16px 16px 0 0;
+        }
+
+        .modal-header h2 {
+            font-size: 1.5rem;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1.5rem;
+            cursor: pointer;
+            width: 35px;
+            height: 35px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: background 0.2s;
+        }
+
+        .close-btn:hover {
+            background: rgba(255,255,255,0.2);
+        }
+
+        .modal-body {
+            padding: 2rem;
+        }
+
+        .checklist-intro {
+            margin-bottom: 1.5rem;
+            color: #666;
+        }
+
+        .checklist-item {
+            display: flex;
+            gap: 1rem;
+            padding: 1.25rem;
+            margin-bottom: 1rem;
+            background: var(--bg-color);
+            border-radius: 12px;
+            border-left: 4px solid var(--primary-color);
+            transition: all 0.2s;
+        }
+
+        .checklist-item:hover {
+            box-shadow: var(--shadow);
+        }
+
+        .checklist-checkbox {
+            width: 24px;
+            height: 24px;
+            margin-top: 0.25rem;
+            cursor: pointer;
+            accent-color: var(--success);
+        }
+
+        .checklist-item-content {
+            flex: 1;
+        }
+
+        .checklist-item h4 {
+            margin-bottom: 0.5rem;
+            color: var(--primary-color);
+        }
+
+        .checklist-item p {
+            color: #666;
+            font-size: 0.95rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .checklist-meta {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            margin-top: 0.75rem;
+        }
+
+        .checklist-tag {
+            padding: 0.25rem 0.75rem;
+            background: white;
+            border-radius: 12px;
+            font-size: 0.85rem;
+            color: #666;
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+
+        .checklist-link {
+            color: var(--primary-color);
+            text-decoration: none;
+            font-weight: 500;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+
+        .checklist-link:hover {
+            text-decoration: underline;
+        }
+
+        .modal-footer {
+            padding: 1.5rem;
+            border-top: 1px solid var(--light-gray);
+            display: flex;
+            gap: 1rem;
+        }
+
+        .modal-btn {
+            flex: 1;
+            padding: 0.875rem;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        .modal-btn.primary {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .modal-btn.primary:hover {
+            background: #3a7a8a;
+        }
+
+        .modal-btn.secondary {
+            background: white;
+            color: var(--primary-color);
+            border: 2px solid var(--primary-color);
+        }
+
+        .modal-btn.secondary:hover {
+            background: var(--bg-color);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container {
+                flex-direction: column;
+            }
+
+            .sidebar {
+                position: fixed;
+                left: 0;
+                top: 80px;
+                bottom: 0;
+                z-index: 90;
+                box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+            }
+
+            .menu-btn {
+                display: block;
+            }
+
+            .landing-view h1 {
+                font-size: 2rem;
+            }
+
+            .landing-view p {
+                font-size: 1rem;
+            }
+
+            .quick-start-cards {
+                grid-template-columns: 1fr;
+            }
+
+            .message-content {
+                max-width: 85%;
+            }
+
+            .action-buttons {
+                right: 1rem;
+                bottom: 90px;
+            }
+
+            .action-btn {
+                width: 50px;
+                height: 50px;
+                font-size: 1.2rem;
+            }
+
+            .modal-content {
+                margin: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="logo-container">
+            <div class="logo-placeholder">🌍</div>
+            <div>
+                <div class="brand-name">BenefitsFlow</div>
+                <div class="brand-tagline">Your California Benefits Navigator</div>
+            </div>
+        </div>
+        <button class="menu-btn" onclick="toggleSidebar()">☰</button>
+    </header>
+
+    <!-- Main Container -->
+    <div class="container">
+        <!-- Sidebar -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-section">
+                <h3>📊 Your Session</h3>
+                <div id="programsList">
+                    <p style="color: #999; font-size: 0.9rem;">Start a conversation to see programs</p>
+                </div>
+            </div>
+
+            <div class="sidebar-section">
+                <h3>⚙️ Settings</h3>
+                <button class="sidebar-btn" onclick="clearChat()">
+                    🗑️ Clear Chat
+                </button>
+                <button class="sidebar-btn" onclick="showFeedback()">
+                    💬 Send Feedback
+                </button>
+                <button class="sidebar-btn">
+                    ❓ Help
+                </button>
+            </div>
+
+            <div class="privacy-notice">
+                <strong>🔒 Privacy & Security</strong><br>
+                • Session-based, no PII stored<br>
+                • Data last updated: October 2025<br>
+                • Evidence-based information
+            </div>
+        </aside>
+
+        <!-- Chat Container -->
+        <main class="chat-container">
+            <!-- Landing View -->
+            <div class="landing-view" id="landingView">
+                <div class="hero-icon">🌍</div>
+                <h1>Find the Right Benefits for Your Situation</h1>
+                <p>Get personalized guidance on California's public assistance programs. We'll help you navigate food assistance, healthcare, cash aid, and more.</p>
+
+                <div class="quick-start-cards">
+                    <div class="quick-card" onclick="quickStart('job loss')">
+                        <div class="quick-card-icon">💼</div>
+                        <h3>Job Loss</h3>
+                        <p>Unemployment, training programs</p>
+                    </div>
+                    <div class="quick-card" onclick="quickStart('healthcare')">
+                        <div class="quick-card-icon">🏥</div>
+                        <h3>Healthcare</h3>
+                        <p>Medi-Cal, health coverage</p>
+                    </div>
+                    <div class="quick-card" onclick="quickStart('food assistance')">
+                        <div class="quick-card-icon">🍽️</div>
+                        <h3>Food</h3>
+                        <p>CalFresh, food programs</p>
+                    </div>
+                    <div class="quick-card" onclick="quickStart('housing')">
+                        <div class="quick-card-icon">🏠</div>
+                        <h3>Housing</h3>
+                        <p>Rental assistance, shelters</p>
+                    </div>
+                </div>
+
+                <div class="trust-badges">
+                    <div class="trust-badge">
+                        <span>🔒</span>
+                        <span>Privacy First</span>
+                    </div>
+                    <div class="trust-badge">
+                        <span>📚</span>
+                        <span>Evidence-Based</span>
+                    </div>
+                    <div class="trust-badge">
+                        <span>♿</span>
+                        <span>Accessible</span>
+                    </div>
+                    <div class="trust-badge">
+                        <span>🔄</span>
+                        <span>Always Updated</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Chat Messages -->
+            <div class="chat-messages" id="chatMessages">
+                <!-- Messages will be added here dynamically -->
+            </div>
+
+            <!-- Typing Indicator -->
+            <div class="typing-indicator" id="typingIndicator">
+                <div class="message-avatar" style="background: var(--primary-color); color: white;">🤖</div>
+                <div>
+                    <div class="typing-dot"></div>
+                    <div class="typing-dot"></div>
+                    <div class="typing-dot"></div>
+                </div>
+            </div>
+
+            <!-- Chat Input -->
+            <div class="chat-input-container">
+                <div class="chat-input-wrapper">
+                    <textarea 
+                        class="chat-input" 
+                        id="chatInput" 
+                        placeholder="Ask me about available programs..."
+                        rows="1"
+                        onkeydown="handleKeyPress(event)"
+                    ></textarea>
+                    <button class="send-btn" id="sendBtn" onclick="sendMessage()">
+                        ➤
+                    </button>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="action-buttons" id="actionButtons" style="display: none;">
+        <button class="action-btn checklist" onclick="showChecklist()" title="Generate Checklist">
+            📋
+        </button>
+        <button class="action-btn restart" onclick="restartChat()" title="Start Over">
+            🔄
+        </button>
+        <button class="action-btn feedback" onclick="showFeedback()" title="Feedback">
+            💬
+        </button>
+    </div>
+
+    <!-- Checklist Modal -->
+    <div class="modal" id="checklistModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>📋 Your Personalized Checklist</h2>
+                <button class="close-btn" onclick="closeModal('checklistModal')">×</button>
+            </div>
+            <div class="modal-body">
+                <p class="checklist-intro">
+                    Based on our conversation, here are the steps you need to take:
+                </p>
+                <div id="checklistContent">
+                    <!-- Checklist items will be added here -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="modal-btn secondary" onclick="window.print()">
+                    📥 Download PDF
+                </button>
+                <button class="modal-btn primary" onclick="emailChecklist()">
+                    📧 Email Me
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Feedback Modal -->
+    <div class="modal" id="feedbackModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>💬 Send Feedback</h2>
+                <button class="close-btn" onclick="closeModal('feedbackModal')">×</button>
+            </div>
+            <div class="modal-body">
+                <p>Help us improve BenefitsFlow:</p>
+                <textarea 
+                    style="width: 100%; min-height: 120px; padding: 1rem; border: 1px solid var(--light-gray); border-radius: 8px; font-family: inherit; margin: 1rem 0;"
+                    placeholder="Share your thoughts, suggestions, or report issues..."
+                ></textarea>
+            </div>
+            <div class="modal-footer">
+                <button class="modal-btn secondary" onclick="closeModal('feedbackModal')">
+                    Cancel
+                </button>
+                <button class="modal-btn primary" onclick="submitFeedback()">
+                    Submit Feedback
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // State management
+        let messages = [];
+        let programs = new Set();
+        let conversationStarted = false;
+
+        // Sample responses for demo
+        const responses = {
+            'job loss': {
+                text: "I understand losing your job is stressful. Let me help you find the support you need. In California, you may be eligible for:\n\n• **Unemployment Insurance (UI)**: Weekly payments while you look for work\n• **CalFresh**: Food assistance for your household\n• **Medi-Cal**: Health coverage at low or no cost\n• **Job training programs**: Free skills training\n\nWhich of these would you like to know more about?",
+                sources: [{name: 'EDD California', url: 'https://edd.ca.gov', date: 'Oct 2025'}],
+                programs: ['Unemployment Insurance', 'CalFresh', 'Medi-Cal'],
+                quickReplies: ['Tell me about UI benefits', 'How do I apply for CalFresh?', 'What documents do I need?']
+            },
+            'healthcare': {
+                text: "California offers several healthcare options:\n\n• **Medi-Cal**: Free or low-cost health coverage\n• **Covered California**: Marketplace for health insurance\n• **Pregnancy support**: Prenatal care and benefits\n\nBased on your household income and size, you may qualify for Medi-Cal. Would you like to check your eligibility?",
+                sources: [{name: 'DHCS', url: 'https://dhcs.ca.gov', date: 'Oct 2025'}],
+                programs: ['Medi-Cal', 'Covered California'],
+                quickReplies: ['Check Medi-Cal eligibility', 'What does Medi-Cal cover?', 'How to apply?']
+            },
+            'food assistance': {
+                text: "CalFresh (formerly food stamps) helps families buy nutritious food. Benefits are loaded onto an EBT card monthly.\n\n**Benefits:**\n• Average $200-600/month depending on household size\n• Shop at most grocery stores\n• Farmers market matching programs\n\n**Quick facts:**\n• Apply online or in-person\n• Most people get approved within 30 days\n• You can work and still qualify\n\nWould you like help determining if you're eligible?",
+                sources: [{name: 'CalFresh', url: 'https://calfresh.ca.gov', date: 'Oct 2025'}],
+                programs: ['CalFresh'],
+                quickReplies: ['Check eligibility', 'How much can I get?', 'Where can I apply?']
+            },
+            'housing': {
+                text: "California has several housing assistance programs:\n\n• **Section 8 Housing Choice Vouchers**: Help pay rent\n• **Emergency housing**: Immediate shelter assistance\n• **Rent relief programs**: Help with back rent\n• **Homeless services**: Transitional housing and support\n\nAre you currently:\n1. At risk of losing housing?\n2. Already homeless?\n3. Need help with rent payments?",
+                sources: [{name: 'HUD', url: 'https://hud.gov', date: 'Oct 2025'}],
+                programs: ['Section 8', 'Emergency Housing'],
+                quickReplies: ['Risk of eviction', 'Currently homeless', 'Need rent help']
+            },
+            'default': {
+                text: "I'm here to help you navigate California's public benefits. I can provide information about:\n\n• Food assistance (CalFresh)\n• Healthcare (Medi-Cal)\n• Unemployment benefits\n• Housing assistance\n• Cash aid (CalWORKs)\n• And more!\n\nWhat situation are you facing?",
+                sources: [],
+                programs: [],
+                quickReplies: ['I lost my job', 'Need healthcare', 'Need food assistance', 'Housing help']
+            }
+        };
+
+        // Initialize
+        function init() {
+            autoResizeTextarea();
+        }
+
+        // Toggle sidebar on mobile
+        function toggleSidebar() {
+            document.getElementById('sidebar').classList.toggle('hidden');
+        }
+
+        // Quick start buttons
+        function quickStart(topic) {
+            document.getElementById('chatInput').value = `I need help with ${topic}`;
+            sendMessage();
+        }
+
+        // Send message
+        function sendMessage() {
+            const input = document.getElementById('chatInput');
+            const message = input.value.trim();
+            
+            if (!message) return;
+
+            // Start conversation
+            if (!conversationStarted) {
+                startConversation();
+            }
+
+            // Add user message
+            addMessage('user', message);
+            input.value = '';
+            input.style.height = 'auto';
+
+            // Show typing indicator
+            showTyping();
+
+            // Simulate bot response
+            setTimeout(() => {
+                const response = getResponse(message);
+                hideTyping();
+                addMessage('bot', response.text, response.sources, response.quickReplies);
+                
+                // Update programs list
+                if (response.programs) {
+                    response.programs.forEach(prog => programs.add(prog));
+                    updateProgramsList();
+                }
+            }, 1500 + Math.random() * 1000);
+        }
+
+        // Get response based on message
+        function getResponse(message) {
+            const lowerMessage = message.toLowerCase();
+            
+            if (lowerMessage.includes('job') || lowerMessage.includes('unemployment') || lowerMessage.includes('lost') || lowerMessage.includes('fired')) {
+                return responses['job loss'];
+            } else if (lowerMessage.includes('health') || lowerMessage.includes('medical') || lowerMessage.includes('medi-cal')) {
+                return responses['healthcare'];
+            } else if (lowerMessage.includes('food') || lowerMessage.includes('calfresh') || lowerMessage.includes('hungry')) {
+                return responses['food assistance'];
+            } else if (lowerMessage.includes('housing') || lowerMessage.includes('rent') || lowerMessage.includes('homeless')) {
+                return responses['housing'];
+            } else {
+                return responses['default'];
+            }
+        }
+
+        // Add message to chat
+        function addMessage(role, text, sources = [], quickReplies = []) {
+            const chatMessages = document.getElementById('chatMessages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${role}`;
+            
+            let avatarContent = role === 'bot' ? '🤖' : '👤';
+            
+            let sourcesHTML = '';
+            if (sources && sources.length > 0) {
+                sourcesHTML = sources.map(s => 
+                    `<span class="source-tag" onclick="window.open('${s.url}', '_blank')">${s.name} • ${s.date}</span>`
+                ).join(' ');
+            }
+
+            let quickRepliesHTML = '';
+            if (quickReplies && quickReplies.length > 0) {
+                quickRepliesHTML = '<div class="quick-replies">' + 
+                    quickReplies.map(r => 
+                        `<button class="quick-reply-btn" onclick="quickReply('${r}')">${r}</button>`
+                    ).join('') + 
+                '</div>';
+            }
+
+            messageDiv.innerHTML = `
+                ${role === 'bot' ? `<div class="message-avatar">${avatarContent}</div>` : ''}
+                <div class="message-content">
+                    ${text.replace(/\n/g, '<br>')}
+                    ${sourcesHTML ? '<br>' + sourcesHTML : ''}
+                    ${quickRepliesHTML}
+                </div>
+                ${role === 'user' ? `<div class="message-avatar">${avatarContent}</div>` : ''}
+            `;
+            
+            chatMessages.appendChild(messageDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+            
+            messages.push({role, text, sources});
+        }
+
+        // Quick reply
+        function quickReply(text) {
+            document.getElementById('chatInput').value = text;
+            sendMessage();
+        }
+
+        // Start conversation
+        function startConversation() {
+            conversationStarted = true;
+            document.getElementById('landingView').classList.add('hidden');
+            document.getElementById('chatMessages').classList.add('active');
+            document.getElementById('actionButtons').style.display = 'flex';
+            
+            // Add welcome message
+            addMessage('bot', "Hi! I'm here to help you navigate California's public benefits. What brings you here today?", [], [
+                'I lost my job',
+                'Need healthcare',
+                'Need food assistance',
+                'Housing help'
+            ]);
+        }
+
+        // Show/hide typing indicator
+        function showTyping() {
+            document.getElementById('typingIndicator').classList.add('active');
+            document.getElementById('chatMessages').scrollTop = document.getElementById('chatMessages').scrollHeight;
+        }
+
+        function hideTyping() {
+            document.getElementById('typingIndicator').classList.remove('active');
+        }
+
+        // Update programs list in sidebar
+        function updateProgramsList() {
+            const listDiv = document.getElementById('programsList');
+            if (programs.size === 0) {
+                listDiv.innerHTML = '<p style="color: #999; font-size: 0.9rem;">Start a conversation to see programs</p>';
+            } else {
+                listDiv.innerHTML = '<ul class="program-list">' + 
+                    Array.from(programs).map(p => `<li>• ${p}</li>`).join('') + 
+                '</ul>';
+            }
+        }
+
+        // Show checklist modal
+        function showChecklist() {
+            const modal = document.getElementById('checklistModal');
+            const content = document.getElementById('checklistContent');
+            
+            // Generate checklist based on conversation
+            const checklistItems = [
+                {
+                    title: 'Gather Required Documents',
+                    description: 'Collect these documents before applying:',
+                    details: [
+                        'Proof of income (pay stubs from last 30 days)',
+                        'Photo ID (Driver\'s License or State ID)',
+                        'Proof of residence (utility bill or lease)',
+                        'Social Security numbers for all household members'
+                    ],
+                    deadline: 'Before starting application',
+                    type: 'Documents'
+                },
+                {
+                    title: 'Apply for Unemployment Insurance',
+                    description: 'File your UI claim online or by phone',
+                    details: [
+                        'Visit EDD.ca.gov to file online',
+                        'Or call 1-800-300-5616',
+                        'Have employment history ready',
+                        'File within first week of unemployment'
+                    ],
+                    deadline: 'Within 1 week of job loss',
+                    link: 'https://edd.ca.gov',
+                    type: 'Action'
+                },
+                {
+                    title: 'Submit CalFresh Application',
+                    description: 'Apply for food assistance benefits',
+                    details: [
+                        'Complete online application at BenefitsCal.com',
+                        'Or visit local county office',
+                        'Interview will be scheduled within 10 days',
+                        'Benefits typically arrive within 30 days'
+                    ],
+                    deadline: 'Apply as soon as possible',
+                    link: 'https://benefitscal.com',
+                    type: 'Action'
+                },
+                {
+                    title: 'Check Medi-Cal Eligibility',
+                    description: 'See if you qualify for health coverage',
+                    details: [
+                        'Use online eligibility calculator',
+                        'Based on household size and income',
+                        'Coverage can start same month',
+                        'No waiting period if eligible'
+                    ],
+                    deadline: 'Check within 15 days',
+                    link: 'https://dhcs.ca.gov',
+                    type: 'Check'
+                }
+            ];
+
+            content.innerHTML = checklistItems.map((item, i) => `
+                <div class="checklist-item">
+                    <input type="checkbox" class="checklist-checkbox" id="check${i}">
+                    <div class="checklist-item-content">
+                        <h4>${item.title}</h4>
+                        <p>${item.description}</p>
+                        <ul style="margin: 0.5rem 0; padding-left: 1.5rem;">
+                            ${item.details.map(d => `<li style="margin: 0.25rem 0;">${d}</li>`).join('')}
+                        </ul>
+                        <div class="checklist-meta">
+                            <span class="checklist-tag">⏰ ${item.deadline}</span>
+                            <span class="checklist-tag">🏷️ ${item.type}</span>
+                            ${item.link ? `<a href="${item.link}" target="_blank" class="checklist-link">Visit Website →</a>` : ''}
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+
+            modal.classList.add('active');
+        }
+
+        // Email checklist
+        function emailChecklist() {
+            alert('📧 Checklist would be sent to your email!\n\n(This is a demo - email functionality would be implemented in production)');
+            closeModal('checklistModal');
+        }
+
+        // Show feedback modal
+        function showFeedback() {
+            document.getElementById('feedbackModal').classList.add('active');
+        }
+
+        // Submit feedback
+        function submitFeedback() {
+            alert('✅ Thank you for your feedback!\n\n(This is a demo - feedback would be saved in production)');
+            closeModal('feedbackModal');
+        }
+
+        // Close modal
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.remove('active');
+        }
+
+        // Clear chat
+        function clearChat() {
+            if (confirm('Are you sure you want to clear the chat? This will reset your session.')) {
+                messages = [];
+                programs.clear();
+                conversationStarted = false;
+                document.getElementById('chatMessages').innerHTML = '';
+                document.getElementById('chatMessages').classList.remove('active');
+                document.getElementById('landingView').classList.remove('hidden');
+                document.getElementById('actionButtons').style.display = 'none';
+                updateProgramsList();
+            }
+        }
+
+        // Restart chat
+        function restartChat() {
+            if (confirm('Start a new conversation? Your current session will be cleared.')) {
+                clearChat();
+            }
+        }
+
+        // Handle enter key
+        function handleKeyPress(event) {
+            if (event.key === 'Enter' && !event.shiftKey) {
+                event.preventDefault();
+                sendMessage();
+            }
+        }
+
+        // Auto-resize textarea
+        function autoResizeTextarea() {
+            const textarea = document.getElementById('chatInput');
+            textarea.addEventListener('input', function() {
+                this.style.height = 'auto';
+                this.style.height = Math.min(this.scrollHeight, 150) + 'px';
+            });
+        }
+
+        // Initialize on load
+        window.onload = init;
+    </script>
+</body>
+</html>
