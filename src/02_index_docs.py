@@ -1,15 +1,21 @@
 # !pip install boto3 faiss-cpu sentence-transformers pypdf python-docx chardet --quiet
-import os, io, json, tempfile, unicodedata, chardet
+import os
+import io
+import json
+import tempfile
+import unicodedata
+import chardet
 import boto3
 from pathlib import Path
 from pypdf import PdfReader
 from docx import Document as DocxDocument
 from sentence_transformers import SentenceTransformer
 import faiss
+import numpy as np
 
 s3 = boto3.client("s3")
 
-BUCKET = ""
+BUCKET = "mids-capstone-benefitsflow"
 PREFIX = "rag/raw"          # where the raw docs live
 INDEX_PREFIX = "rag/index"  # where to write the FAISS index + metadata
 EMBED_MODEL_NAME = ""  # swap if you prefer
@@ -76,7 +82,6 @@ print(f"Collected {len(docs)} chunks")
 # 2) Embed
 model = SentenceTransformer(EMBED_MODEL_NAME)
 embs = model.encode([d["text"] for d in docs], batch_size=64, show_progress_bar=True, normalize_embeddings=True)
-import numpy as np
 embs = np.array(embs, dtype="float32")
 
 # 3) FAISS index
