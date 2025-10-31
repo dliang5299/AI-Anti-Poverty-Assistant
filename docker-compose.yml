@@ -1,0 +1,47 @@
+version: "3.9"
+services:
+  rag-service:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    container_name: rag-service
+    ports:
+      - "8000:8000"
+    environment:
+      # Regions
+      - S3_REGION=${S3_REGION:-us-west-2}
+      - BEDROCK_REGION=${BEDROCK_REGION:-us-west-2}
+      - PINECONE_REGION=${PINECONE_REGION:-us-east-1}
+      - PINECONE_ENV=${PINECONE_ENV:-aws-us-east-1}
+
+      # Models
+      - EMBED_MODEL=${EMBED_MODEL:-text-embedding-3-small}
+      - LLM_MODEL=${LLM_MODEL:-anthropic.claude-3-5-haiku-20241022-v1:0}
+
+      # Pinecone index config
+      - PINECONE_INDEX_NAME=${PINECONE_INDEX_NAME:-knowledge}
+      - PINECONE_DIM=${PINECONE_DIM:-1536}
+
+      # Secrets (for local test you can set OPENAI_API_KEY and PINECONE_API_KEY directly;
+      # in cloud, set these to Secrets Manager ARNs or names and ensure task role has permissions)
+      - OPENAI_API_KEY_SECRET_ARN=${OPENAI_API_KEY_SECRET_ARN}
+      - PINECONE_API_KEY_SECRET_ARN=${PINECONE_API_KEY_SECRET_ARN}
+      - AWS_BEARER_TOKEN_BEDROCK_SECRET_ARN=${AWS_BEARER_TOKEN_BEDROCK_SECRET_ARN}
+
+      # Local-only shortcut (not used in cloud unless you set them)
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - PINECONE_API_KEY=${PINECONE_API_KEY}
+    restart: unless-stopped
+
+  streamlit-ui:
+    build:
+      context: .
+      dockerfile: Dockerfile.ui
+    container_name: streamlit-ui
+    ports:
+      - "8501:8501"
+    environment:
+      - RAG_SERVICE_URL=${RAG_SERVICE_URL:-http://rag-service:8000}
+    depends_on:
+      - rag-service
+    restart: unless-stopped
