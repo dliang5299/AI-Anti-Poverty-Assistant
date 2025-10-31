@@ -1,5 +1,6 @@
 import boto3
 import pandas as pd
+from datetime import datetime
 
 REGION = "us-west-2"
 
@@ -20,7 +21,7 @@ MODELS = [
 ]
 
 system_instructions = (
-    "You are a concise, helpful social worker assistant providing assistance to users who have lost their job in California at a 5th-grade reading level."
+    "You are a concise, helpful social worker assistant providing assistance to users who have lost their job in California at a 5th-grade reading level. Use empathetic language in your response."
 )
 
 user_prompts = [
@@ -78,6 +79,7 @@ for MODEL_ID in MODELS:
 df = pd.DataFrame(results)
 
 # Save to CSV
-output_path = "baseline_model_responses.csv"
+today = datetime.today().strftime("%Y-%m-%d")
+output_path = f"tests/{today}_baseline_model_responses.csv"
 df.to_csv(output_path, index=False)
 print(f"✅ Saved results to {output_path}")
