@@ -12,17 +12,19 @@
         }
 
         :root {
-            --primary-color: #4A90A4;
-            --secondary-color: #F4A261;
-            --bg-color: #FAFAFA;
-            --text-color: #2D3436;
-            --light-gray: #E8E8E8;
+            --primary-color: #E19B53;
+            --secondary-color: #CF8740;
+            --bg-color: #FBE8D3;
+            --panel-color: #FFF7EF;
+            --text-color: #2D2A26;
+            --text-muted: #6B5F57;
+            --light-gray: #E5D0B1;
             --success: #2ECC71;
             --warning: #F39C12;
             --white: #FFFFFF;
-            --user-bubble: #E3F2FD;
-            --bot-bubble: #FFF8E7;
-            --shadow: 0 2px 10px rgba(0,0,0,0.1);
+            --user-bubble: #FAE9D6;
+            --bot-bubble: #FFF7EF;
+            --shadow: 0 2px 8px rgba(0,0,0,0.08);
         }
 
         body {
@@ -34,7 +36,7 @@
 
         /* Header */
         .header {
-            background: linear-gradient(135deg, var(--primary-color) 0%, #2c5f6f 100%);
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
             color: white;
             padding: 1rem 2rem;
             box-shadow: var(--shadow);
@@ -97,7 +99,7 @@
         /* Sidebar */
         .sidebar {
             width: 280px;
-            background: white;
+            background: var(--panel-color);
             border-right: 1px solid var(--light-gray);
             padding: 1.5rem;
             overflow-y: auto;
@@ -137,7 +139,7 @@
             padding: 0.75rem;
             margin: 0.5rem 0;
             border: 1px solid var(--light-gray);
-            background: white;
+            background: var(--white);
             border-radius: 8px;
             cursor: pointer;
             font-size: 0.95rem;
@@ -153,11 +155,12 @@
         }
 
         .privacy-notice {
-            background: #f0f9ff;
+            background: var(--bg-color);
             padding: 1rem;
             border-radius: 8px;
             font-size: 0.85rem;
-            color: #0c4a6e;
+            color: var(--text-muted);
+            border-left: 3px solid var(--primary-color);
             margin-top: 1rem;
         }
 
@@ -196,6 +199,7 @@
             font-size: 3rem;
             margin-bottom: 2rem;
             box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+            padding: 20px;
         }
 
         .landing-view h1 {
@@ -221,7 +225,7 @@
         }
 
         .quick-card {
-            background: white;
+            background: var(--panel-color);
             padding: 2rem 1.5rem;
             border-radius: 12px;
             box-shadow: var(--shadow);
@@ -248,7 +252,7 @@
 
         .quick-card p {
             font-size: 0.9rem;
-            color: #666;
+            color: var(--text-muted);
             margin: 0;
         }
 
@@ -418,7 +422,7 @@
         /* Chat Input */
         .chat-input-container {
             padding: 1.5rem;
-            background: white;
+            background: var(--panel-color);
             border-top: 1px solid var(--light-gray);
         }
 
@@ -440,6 +444,7 @@
             outline: none;
             transition: border-color 0.2s;
             max-height: 150px;
+            background: var(--white);
         }
 
         .chat-input:focus {
@@ -462,7 +467,7 @@
         }
 
         .send-btn:hover {
-            background: #3a7a8a;
+            background: var(--secondary-color);
             transform: scale(1.05);
         }
 
@@ -516,6 +521,11 @@
             color: white;
         }
 
+        .action-btn.calendar {
+            background: #F39C12;
+            color: white;
+        }
+
         /* Modal */
         .modal {
             display: none;
@@ -542,7 +552,7 @@
         }
 
         .modal-content {
-            background: white;
+            background: var(--panel-color);
             border-radius: 16px;
             max-width: 600px;
             width: 100%;
@@ -569,7 +579,7 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            background: linear-gradient(135deg, var(--primary-color), #2c5f6f);
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
             color: white;
             border-radius: 16px 16px 0 0;
         }
@@ -601,80 +611,6 @@
             padding: 2rem;
         }
 
-        .checklist-intro {
-            margin-bottom: 1.5rem;
-            color: #666;
-        }
-
-        .checklist-item {
-            display: flex;
-            gap: 1rem;
-            padding: 1.25rem;
-            margin-bottom: 1rem;
-            background: var(--bg-color);
-            border-radius: 12px;
-            border-left: 4px solid var(--primary-color);
-            transition: all 0.2s;
-        }
-
-        .checklist-item:hover {
-            box-shadow: var(--shadow);
-        }
-
-        .checklist-checkbox {
-            width: 24px;
-            height: 24px;
-            margin-top: 0.25rem;
-            cursor: pointer;
-            accent-color: var(--success);
-        }
-
-        .checklist-item-content {
-            flex: 1;
-        }
-
-        .checklist-item h4 {
-            margin-bottom: 0.5rem;
-            color: var(--primary-color);
-        }
-
-        .checklist-item p {
-            color: #666;
-            font-size: 0.95rem;
-            margin-bottom: 0.5rem;
-        }
-
-        .checklist-meta {
-            display: flex;
-            gap: 1rem;
-            flex-wrap: wrap;
-            margin-top: 0.75rem;
-        }
-
-        .checklist-tag {
-            padding: 0.25rem 0.75rem;
-            background: white;
-            border-radius: 12px;
-            font-size: 0.85rem;
-            color: #666;
-            display: flex;
-            align-items: center;
-            gap: 0.25rem;
-        }
-
-        .checklist-link {
-            color: var(--primary-color);
-            text-decoration: none;
-            font-weight: 500;
-            display: inline-flex;
-            align-items: center;
-            gap: 0.25rem;
-        }
-
-        .checklist-link:hover {
-            text-decoration: underline;
-        }
-
         .modal-footer {
             padding: 1.5rem;
             border-top: 1px solid var(--light-gray);
@@ -703,7 +639,7 @@
         }
 
         .modal-btn.primary:hover {
-            background: #3a7a8a;
+            background: var(--secondary-color);
         }
 
         .modal-btn.secondary {
@@ -714,6 +650,16 @@
 
         .modal-btn.secondary:hover {
             background: var(--bg-color);
+        }
+
+        /* Error message */
+        .error-message {
+            background: #fee;
+            color: #c33;
+            padding: 1rem;
+            border-radius: 8px;
+            margin: 1rem 0;
+            border-left: 4px solid #c33;
         }
 
         /* Responsive */
@@ -772,7 +718,7 @@
     <!-- Header -->
     <header class="header">
         <div class="logo-container">
-            <div class="logo-placeholder">🌍</div>
+            <img src="images/Logo.png" alt="BenefitsFlow Logo" style="width: 60px; height: 60px; border-radius: 50%; object-fit: cover;">
             <div>
                 <div class="brand-name">BenefitsFlow</div>
                 <div class="brand-tagline">Your California Benefits Navigator</div>
@@ -817,7 +763,9 @@
         <main class="chat-container">
             <!-- Landing View -->
             <div class="landing-view" id="landingView">
-                <div class="hero-icon">🌍</div>
+                <div class="hero-icon">
+                    <img src="images/Logo.png" alt="BenefitsFlow Logo" style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover;">
+                </div>
                 <h1>Find the Right Benefits for Your Situation</h1>
                 <p>Get personalized guidance on California's public assistance programs. We'll help you navigate food assistance, healthcare, cash aid, and more.</p>
 
@@ -902,6 +850,9 @@
         <button class="action-btn checklist" onclick="showChecklist()" title="Generate Checklist">
             📋
         </button>
+        <button class="action-btn calendar" onclick="downloadCalendar()" title="Download Calendar">
+            📅
+        </button>
         <button class="action-btn restart" onclick="restartChat()" title="Start Over">
             🔄
         </button>
@@ -918,15 +869,13 @@
                 <button class="close-btn" onclick="closeModal('checklistModal')">×</button>
             </div>
             <div class="modal-body">
-                <p class="checklist-intro">
-                    Based on our conversation, here are the steps you need to take:
-                </p>
+                <p>Based on our conversation, here are the steps you need to take:</p>
                 <div id="checklistContent">
-                    <!-- Checklist items will be added here -->
+                    <!-- Checklist items will be loaded here -->
                 </div>
             </div>
             <div class="modal-footer">
-                <button class="modal-btn secondary" onclick="window.print()">
+                <button class="modal-btn secondary" onclick="downloadPDF()">
                     📥 Download PDF
                 </button>
                 <button class="modal-btn primary" onclick="emailChecklist()">
@@ -962,48 +911,48 @@
     </div>
 
     <script>
+        // Configuration
+        const API_BASE_URL = window.location.origin + '/api';
+        
         // State management
         let messages = [];
         let programs = new Set();
         let conversationStarted = false;
+        let currentSituation = null;
 
-        // Sample responses for demo
-        const responses = {
-            'job loss': {
-                text: "I understand losing your job is stressful. Let me help you find the support you need. In California, you may be eligible for:\n\n• **Unemployment Insurance (UI)**: Weekly payments while you look for work\n• **CalFresh**: Food assistance for your household\n• **Medi-Cal**: Health coverage at low or no cost\n• **Job training programs**: Free skills training\n\nWhich of these would you like to know more about?",
-                sources: [{name: 'EDD California', url: 'https://edd.ca.gov', date: 'Oct 2025'}],
-                programs: ['Unemployment Insurance', 'CalFresh', 'Medi-Cal'],
-                quickReplies: ['Tell me about UI benefits', 'How do I apply for CalFresh?', 'What documents do I need?']
-            },
-            'healthcare': {
-                text: "California offers several healthcare options:\n\n• **Medi-Cal**: Free or low-cost health coverage\n• **Covered California**: Marketplace for health insurance\n• **Pregnancy support**: Prenatal care and benefits\n\nBased on your household income and size, you may qualify for Medi-Cal. Would you like to check your eligibility?",
-                sources: [{name: 'DHCS', url: 'https://dhcs.ca.gov', date: 'Oct 2025'}],
-                programs: ['Medi-Cal', 'Covered California'],
-                quickReplies: ['Check Medi-Cal eligibility', 'What does Medi-Cal cover?', 'How to apply?']
-            },
-            'food assistance': {
-                text: "CalFresh (formerly food stamps) helps families buy nutritious food. Benefits are loaded onto an EBT card monthly.\n\n**Benefits:**\n• Average $200-600/month depending on household size\n• Shop at most grocery stores\n• Farmers market matching programs\n\n**Quick facts:**\n• Apply online or in-person\n• Most people get approved within 30 days\n• You can work and still qualify\n\nWould you like help determining if you're eligible?",
-                sources: [{name: 'CalFresh', url: 'https://calfresh.ca.gov', date: 'Oct 2025'}],
-                programs: ['CalFresh'],
-                quickReplies: ['Check eligibility', 'How much can I get?', 'Where can I apply?']
-            },
-            'housing': {
-                text: "California has several housing assistance programs:\n\n• **Section 8 Housing Choice Vouchers**: Help pay rent\n• **Emergency housing**: Immediate shelter assistance\n• **Rent relief programs**: Help with back rent\n• **Homeless services**: Transitional housing and support\n\nAre you currently:\n1. At risk of losing housing?\n2. Already homeless?\n3. Need help with rent payments?",
-                sources: [{name: 'HUD', url: 'https://hud.gov', date: 'Oct 2025'}],
-                programs: ['Section 8', 'Emergency Housing'],
-                quickReplies: ['Risk of eviction', 'Currently homeless', 'Need rent help']
-            },
-            'default': {
-                text: "I'm here to help you navigate California's public benefits. I can provide information about:\n\n• Food assistance (CalFresh)\n• Healthcare (Medi-Cal)\n• Unemployment benefits\n• Housing assistance\n• Cash aid (CalWORKs)\n• And more!\n\nWhat situation are you facing?",
-                sources: [],
-                programs: [],
-                quickReplies: ['I lost my job', 'Need healthcare', 'Need food assistance', 'Housing help']
-            }
-        };
+        // Format message text to handle markdown
+        function formatMessageText(text) {
+            // Convert **text** to <strong>text</strong>
+            return text
+                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                .replace(/\n/g, '<br>');
+        }
 
         // Initialize
         function init() {
             autoResizeTextarea();
+            checkAPIStatus();
+        }
+
+        // Check if API is running
+        async function checkAPIStatus() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/health`);
+                if (!response.ok) throw new Error('API not responding');
+                console.log('✅ FastAPI backend is running');
+            } catch (error) {
+                console.warn('⚠️ FastAPI backend not running. Some features may not work.');
+                showError('Backend API not available. Please start the FastAPI server.');
+            }
+        }
+
+        // Show error message
+        function showError(message) {
+            const chatMessages = document.getElementById('chatMessages');
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'error-message';
+            errorDiv.textContent = message;
+            chatMessages.appendChild(errorDiv);
         }
 
         // Toggle sidebar on mobile
@@ -1017,8 +966,8 @@
             sendMessage();
         }
 
-        // Send message
-        function sendMessage() {
+        // Send message to FastAPI backend
+        async function sendMessage() {
             const input = document.getElementById('chatInput');
             const message = input.value.trim();
             
@@ -1037,39 +986,94 @@
             // Show typing indicator
             showTyping();
 
-            // Simulate bot response
-            setTimeout(() => {
-                const response = getResponse(message);
+            try {
+                // Send to FastAPI backend
+                const response = await fetch(`${API_BASE_URL}/chat`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        message: message,
+                        situation: currentSituation,
+                        conversation_history: messages.map(msg => ({
+                            role: msg.role,
+                            content: msg.content,
+                            sources: msg.sources || []
+                        }))
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                
+                // Hide typing and add bot response
                 hideTyping();
-                addMessage('bot', response.text, response.sources, response.quickReplies);
+                addMessage('bot', data.response, data.sources);
                 
                 // Update programs list
-                if (response.programs) {
-                    response.programs.forEach(prog => programs.add(prog));
+                if (data.programs && data.programs.length > 0) {
+                    data.programs.forEach(prog => programs.add(prog));
                     updateProgramsList();
                 }
-            }, 1500 + Math.random() * 1000);
+
+            } catch (error) {
+                console.error('Error sending message:', error);
+                hideTyping();
+                
+                // Fallback to demo response if API is not available
+                const demoResponse = getDemoResponse(message);
+                addMessage('bot', demoResponse.text, demoResponse.sources);
+                
+                if (demoResponse.programs) {
+                    demoResponse.programs.forEach(prog => programs.add(prog));
+                    updateProgramsList();
+                }
+            }
         }
 
-        // Get response based on message
-        function getResponse(message) {
+        // Demo responses for when API is not available
+        function getDemoResponse(message) {
             const lowerMessage = message.toLowerCase();
             
-            if (lowerMessage.includes('job') || lowerMessage.includes('unemployment') || lowerMessage.includes('lost') || lowerMessage.includes('fired')) {
-                return responses['job loss'];
+            if (lowerMessage.includes('job') || lowerMessage.includes('unemployment') || lowerMessage.includes('lost')) {
+                return {
+                    text: "I understand losing your job is stressful. Let me help you find the support you need. In California, you may be eligible for:\n\n• **Unemployment Insurance (UI)**: Weekly payments while you look for work\n• **CalFresh**: Food assistance for your household\n• **Medi-Cal**: Health coverage at low or no cost\n• **Job training programs**: Free skills training\n\nWhich of these would you like to know more about?",
+                    sources: [{name: 'EDD California', url: 'https://edd.ca.gov', date: 'Oct 2025'}],
+                    programs: ['Unemployment Insurance', 'CalFresh', 'Medi-Cal']
+                };
             } else if (lowerMessage.includes('health') || lowerMessage.includes('medical') || lowerMessage.includes('medi-cal')) {
-                return responses['healthcare'];
+                return {
+                    text: "California offers several healthcare options:\n\n• **Medi-Cal**: Free or low-cost health coverage\n• **Covered California**: Marketplace for health insurance\n• **Pregnancy support**: Prenatal care and benefits\n\nBased on your household income and size, you may qualify for Medi-Cal. Would you like to check your eligibility?",
+                    sources: [{name: 'DHCS', url: 'https://dhcs.ca.gov', date: 'Oct 2025'}],
+                    programs: ['Medi-Cal', 'Covered California']
+                };
             } else if (lowerMessage.includes('food') || lowerMessage.includes('calfresh') || lowerMessage.includes('hungry')) {
-                return responses['food assistance'];
+                return {
+                    text: "CalFresh (formerly food stamps) helps families buy nutritious food. Benefits are loaded onto an EBT card monthly.\n\n**Benefits:**\n• Average $200-600/month depending on household size\n• Shop at most grocery stores\n• Farmers market matching programs\n\n**Quick facts:**\n• Apply online or in-person\n• Most people get approved within 30 days\n• You can work and still qualify\n\nWould you like help determining if you're eligible?",
+                    sources: [{name: 'CalFresh', url: 'https://calfresh.ca.gov', date: 'Oct 2025'}],
+                    programs: ['CalFresh']
+                };
             } else if (lowerMessage.includes('housing') || lowerMessage.includes('rent') || lowerMessage.includes('homeless')) {
-                return responses['housing'];
+                return {
+                    text: "California has several housing assistance programs:\n\n• **Section 8 Housing Choice Vouchers**: Help pay rent\n• **Emergency housing**: Immediate shelter assistance\n• **Rent relief programs**: Help with back rent\n• **Homeless services**: Transitional housing and support\n\nAre you currently:\n1. At risk of losing housing?\n2. Already homeless?\n3. Need help with rent payments?",
+                    sources: [{name: 'HUD', url: 'https://hud.gov', date: 'Oct 2025'}],
+                    programs: ['Section 8', 'Emergency Housing']
+                };
             } else {
-                return responses['default'];
+                return {
+                    text: "I'm here to help you navigate California's public benefits. I can provide information about:\n\n• Food assistance (CalFresh)\n• Healthcare (Medi-Cal)\n• Unemployment benefits\n• Housing assistance\n• Cash aid (CalWORKs)\n• And more!\n\nWhat situation are you facing?",
+                    sources: [],
+                    programs: []
+                };
             }
         }
 
         // Add message to chat
-        function addMessage(role, text, sources = [], quickReplies = []) {
+        function addMessage(role, text, sources = []) {
             const chatMessages = document.getElementById('chatMessages');
             const messageDiv = document.createElement('div');
             messageDiv.className = `message ${role}`;
@@ -1083,21 +1087,11 @@
                 ).join(' ');
             }
 
-            let quickRepliesHTML = '';
-            if (quickReplies && quickReplies.length > 0) {
-                quickRepliesHTML = '<div class="quick-replies">' + 
-                    quickReplies.map(r => 
-                        `<button class="quick-reply-btn" onclick="quickReply('${r}')">${r}</button>`
-                    ).join('') + 
-                '</div>';
-            }
-
             messageDiv.innerHTML = `
                 ${role === 'bot' ? `<div class="message-avatar">${avatarContent}</div>` : ''}
                 <div class="message-content">
-                    ${text.replace(/\n/g, '<br>')}
+                    ${formatMessageText(text)}
                     ${sourcesHTML ? '<br>' + sourcesHTML : ''}
-                    ${quickRepliesHTML}
                 </div>
                 ${role === 'user' ? `<div class="message-avatar">${avatarContent}</div>` : ''}
             `;
@@ -1105,13 +1099,7 @@
             chatMessages.appendChild(messageDiv);
             chatMessages.scrollTop = chatMessages.scrollHeight;
             
-            messages.push({role, text, sources});
-        }
-
-        // Quick reply
-        function quickReply(text) {
-            document.getElementById('chatInput').value = text;
-            sendMessage();
+            messages.push({role, content: text, sources});
         }
 
         // Start conversation
@@ -1122,12 +1110,7 @@
             document.getElementById('actionButtons').style.display = 'flex';
             
             // Add welcome message
-            addMessage('bot', "Hi! I'm here to help you navigate California's public benefits. What brings you here today?", [], [
-                'I lost my job',
-                'Need healthcare',
-                'Need food assistance',
-                'Housing help'
-            ]);
+            addMessage('bot', "Hi! I'm here to help you navigate California's public benefits. What brings you here today?");
         }
 
         // Show/hide typing indicator
@@ -1153,84 +1136,151 @@
         }
 
         // Show checklist modal
-        function showChecklist() {
+        async function showChecklist() {
             const modal = document.getElementById('checklistModal');
             const content = document.getElementById('checklistContent');
             
-            // Generate checklist based on conversation
-            const checklistItems = [
-                {
-                    title: 'Gather Required Documents',
-                    description: 'Collect these documents before applying:',
-                    details: [
-                        'Proof of income (pay stubs from last 30 days)',
-                        'Photo ID (Driver\'s License or State ID)',
-                        'Proof of residence (utility bill or lease)',
-                        'Social Security numbers for all household members'
-                    ],
-                    deadline: 'Before starting application',
-                    type: 'Documents'
-                },
-                {
-                    title: 'Apply for Unemployment Insurance',
-                    description: 'File your UI claim online or by phone',
-                    details: [
-                        'Visit EDD.ca.gov to file online',
-                        'Or call 1-800-300-5616',
-                        'Have employment history ready',
-                        'File within first week of unemployment'
-                    ],
-                    deadline: 'Within 1 week of job loss',
-                    link: 'https://edd.ca.gov',
-                    type: 'Action'
-                },
-                {
-                    title: 'Submit CalFresh Application',
-                    description: 'Apply for food assistance benefits',
-                    details: [
-                        'Complete online application at BenefitsCal.com',
-                        'Or visit local county office',
-                        'Interview will be scheduled within 10 days',
-                        'Benefits typically arrive within 30 days'
-                    ],
-                    deadline: 'Apply as soon as possible',
-                    link: 'https://benefitscal.com',
-                    type: 'Action'
-                },
-                {
-                    title: 'Check Medi-Cal Eligibility',
-                    description: 'See if you qualify for health coverage',
-                    details: [
-                        'Use online eligibility calculator',
-                        'Based on household size and income',
-                        'Coverage can start same month',
-                        'No waiting period if eligible'
-                    ],
-                    deadline: 'Check within 15 days',
-                    link: 'https://dhcs.ca.gov',
-                    type: 'Check'
-                }
-            ];
+            try {
+                // Try to get checklist from API
+                const response = await fetch(`${API_BASE_URL}/download/checklist`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        situation: currentSituation,
+                        conversation_history: messages
+                    })
+                });
 
-            content.innerHTML = checklistItems.map((item, i) => `
-                <div class="checklist-item">
-                    <input type="checkbox" class="checklist-checkbox" id="check${i}">
-                    <div class="checklist-item-content">
-                        <h4>${item.title}</h4>
-                        <p>${item.description}</p>
-                        <ul style="margin: 0.5rem 0; padding-left: 1.5rem;">
-                            ${item.details.map(d => `<li style="margin: 0.25rem 0;">${d}</li>`).join('')}
-                        </ul>
-                        <div class="checklist-meta">
-                            <span class="checklist-tag">⏰ ${item.deadline}</span>
-                            <span class="checklist-tag">🏷️ ${item.type}</span>
-                            ${item.link ? `<a href="${item.link}" target="_blank" class="checklist-link">Visit Website →</a>` : ''}
-                        </div>
+                if (response.ok) {
+                    const checklistText = await response.text();
+                    content.innerHTML = `<pre style="white-space: pre-wrap; font-family: inherit;">${checklistText}</pre>`;
+                } else {
+                    throw new Error('API not available');
+                }
+            } catch (error) {
+                // Fallback to demo checklist
+                content.innerHTML = `
+                    <div style="margin-bottom: 1rem;">
+                        <h4 style="color: var(--primary-color); margin-bottom: 0.5rem;">📄 Gather Required Documents</h4>
+                        <p>• Proof of income (pay stubs from last 30 days)</p>
+                        <p>• Photo ID (Driver's License or State ID)</p>
+                        <p>• Proof of residence (utility bill or lease)</p>
+                        <p>• Social Security numbers for all household members</p>
                     </div>
-                </div>
-            `).join('');
+                    <div style="margin-bottom: 1rem;">
+                        <h4 style="color: var(--primary-color); margin-bottom: 0.5rem;">💼 Apply for Benefits</h4>
+                        <p>• Visit BenefitsCal.com for CalFresh and Medi-Cal</p>
+                        <p>• Visit EDD.ca.gov for Unemployment Insurance</p>
+                        <p>• Contact local county office for assistance</p>
+                    </div>
+                    <div style="margin-bottom: 1rem;">
+                        <h4 style="color: var(--primary-color); margin-bottom: 0.5rem;">📞 Follow Up</h4>
+                        <p>• Check application status regularly</p>
+                        <p>• Respond to requests for additional information</p>
+                        <p>• Keep copies of all submitted documents</p>
+                    </div>
+                `;
+            }
 
             modal.classList.add('active');
+        }
+
+        // Download PDF checklist
+        async function downloadPDF() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/download/checklist`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        situation: currentSituation,
+                        conversation_history: messages
+                    })
+                });
+
+                if (response.ok) {
+                    const blob = await response.blob();
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = 'benefits-checklist.txt';
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    window.URL.revokeObjectURL(url);
+                    alert('📄 Checklist downloaded successfully!');
+                } else {
+                    throw new Error('Download failed');
+                }
+            } catch (error) {
+                alert('📄 Demo checklist downloaded! (API not available)');
+            }
+        }
+
+        // Download calendar
+        async function downloadCalendar() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/download/calendar`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        situation: currentSituation,
+                        conversation_history: messages
+                    })
+                });
+
+                if (response.ok) {
+                    const blob = await response.blob();
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = 'benefits-calendar.ics';
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    window.URL.revokeObjectURL(url);
+                    alert('📅 Calendar downloaded successfully!');
+                } else {
+                    throw new Error('Download failed');
+                }
+            } catch (error) {
+                // Fallback to demo calendar
+                const icsContent = `BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//BenefitsFlow//California Benefits Calendar//EN
+CALSCALE:GREGORIAN
+METHOD:PUBLISH
+X-WR-CALNAME:California Benefits Important Dates 2025
+X-WR-CALDESC:Important dates for California benefits programs
+X-WR-TIMEZONE:America/Los_Angeles
+
+BEGIN:VEVENT
+UID:new-year-2025@benefitsflow.com
+DTSTART:20250101T000000Z
+DTEND:20250101T235959Z
+SUMMARY:New Year - Benefits offices closed
+DESCRIPTION:Benefits offices are closed for New Year's Day
+LOCATION:California Benefits Offices
+STATUS:CONFIRMED
+END:VEVENT
+END:VCALENDAR`;
+
+                const blob = new Blob([icsContent], { type: 'text/calendar' });
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'california-benefits-calendar-2025.ics';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                window.URL.revokeObjectURL(url);
+                alert('📅 Demo calendar downloaded!');
+            }
         }
 
         // Email checklist
@@ -1261,6 +1311,7 @@
                 messages = [];
                 programs.clear();
                 conversationStarted = false;
+                currentSituation = null;
                 document.getElementById('chatMessages').innerHTML = '';
                 document.getElementById('chatMessages').classList.remove('active');
                 document.getElementById('landingView').classList.remove('hidden');

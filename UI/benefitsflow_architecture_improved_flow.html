@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BenefitsFlow System Architecture</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+            line-height: 1.6;
+            color: #2d3748;
+            background-color: #f7fafc;
+            padding: 30px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+        }
+        
+        h1 {
+            text-align: center;
+            font-weight: 700;
+            font-size: 2.2em;
+            margin-bottom: 2em;
+            color: #1a202c;
+        }
+        
+        .architecture-wrapper {
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
+        }
+        
+        /* Flow Sections */
+        .flow-section {
+            background-color: #ebf8ff;
+            border-radius: 8px;
+            padding: 20px;
+            position: relative;
+        }
+        
+        .section-title {
+            font-weight: 600;
+            color: #2a4365;
+            margin-bottom: 15px;
+            font-size: 1.15em;
+        }
+        
+        .horizontal-flow {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+        
+        /* Components */
+        .component {
+            background-color: white;
+            border: 2px solid #90cdf4;
+            border-radius: 8px;
+            padding: 15px 10px;
+            width: 120px;
+            text-align: center;
+            font-size: 0.9em;
+            font-weight: 500;
+            position: relative;
+            min-height: 115px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .step-num {
+            position: absolute;
+            top: -10px;
+            left: -10px;
+            background-color: #3182ce;
+            color: white;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75em;
+            font-weight: 700;
+        }
+        
+        .step-num.green {
+            background-color: #38a169;
+        }
+        
+        .step-num.orange {
+            background-color: #dd6b20;
+        }
+        
+        .component-icon {
+            font-size: 1.8em;
+            margin-bottom: 5px;
+        }
+        
+        .component-subtitle {
+            font-size: 0.75em;
+            color: #718096;
+            font-weight: 400;
+            margin-top: 5px;
+            line-height: 1.2;
+        }
+        
+        .arrow {
+            font-size: 1.5em;
+            color: #4a5568;
+        }
+        
+        .arrow-vertical {
+            font-size: 1.5em;
+            color: #4a5568;
+        }
+        
+        .user-icon {
+            background-color: #4299e1;
+            color: white;
+            border-radius: 50%;
+            width: 45px;
+            height: 45px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5em;
+        }
+        
+        /* AWS Component Styling */
+        .aws-component {
+            background-color: #fff8dc;
+            border: 2px solid #ecc94b;
+            position: relative;
+        }
+        
+        .aws-label {
+            position: absolute;
+            top: -10px;
+            right: -10px;
+            background-color: #ecc94b;
+            color: #744210;
+            border-radius: 8px;
+            padding: 2px 6px;
+            font-size: 0.6em;
+            font-weight: 700;
+        }
+        
+        .aws-icon {
+            width: 22px;
+            height: 22px;
+            position: absolute;
+            bottom: -5px;
+            right: -5px;
+        }
+        
+        /* Green Section */
+        .flow-section.green {
+            background-color: #e6fffa;
+        }
+        
+        .component.green-border {
+            border-color: #4fd1c5;
+        }
+        
+        /* Output Section */
+        .output-section {
+            background-color: #fffaf0;
+            border-radius: 8px;
+            padding: 20px;
+        }
+        
+        .output-title {
+            font-weight: 600;
+            color: #7b341e;
+            margin-bottom: 15px;
+            font-size: 1.05em;
+        }
+        
+        .output-container {
+            display: flex;
+            flex-direction: row;
+            gap: 15px;
+        }
+        
+        .output-box {
+            background-color: white;
+            border: 2px solid #fbd38d;
+            border-radius: 8px;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            width: 48%;
+        }
+        
+        .output-icon {
+            font-size: 1.6em;
+        }
+        
+        .output-label {
+            font-weight: 600;
+            font-size: 1.1em;
+        }
+        
+        .output-desc {
+            font-size: 0.85em;
+            color: #4a5568;
+        }
+        
+        .component-annotation {
+            font-size: 0.65em;
+            color: #718096;
+            font-style: italic;
+            margin-top: 5px;
+            line-height: 1.3;
+        }
+        
+        .data-source {
+            font-size: 0.7em;
+            color: #4a5568;
+            margin-top: 8px;
+            padding-top: 8px;
+            border-top: 1px dashed #cbd5e0;
+            line-height: 1.4;
+        }
+        
+        .data-source-item {
+            margin: 3px 0;
+        }
+        
+        .arrow-solid {
+            color: #2d3748;
+            font-weight: 700;
+            margin-right: 3px;
+        }
+        
+        .arrow-dashed {
+            color: #718096;
+            font-weight: 700;
+            margin-right: 3px;
+        }
+        
+        /* Legend */
+        .legend {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            margin-top: 20px;
+            padding-top: 15px;
+            border-top: 2px solid #e2e8f0;
+            flex-wrap: wrap;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.8em;
+            color: #4a5568;
+        }
+        
+        .legend-color {
+            width: 40px;
+            height: 18px;
+            border-radius: 4px;
+            border: 2px solid #cbd5e0;
+        }
+        
+        /* AWS and API specific styling */
+        .component.orange-border {
+            border-color: #ed8936;
+        }
+        
+        .component.purple-border {
+            border-color: #9f7aea;
+        }
+        
+        .component.aws {
+            border-color: #f6ad55;
+            background-color: #fffaf0;
+        }
+        
+        /* Data Pipeline Process Flow */
+        .pipeline-container {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        
+        .process-flow {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            flex-wrap: nowrap;
+            overflow-x: auto;
+            padding: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>BenefitsFlow System Architecture</h1>
+        
+        <div class="architecture-wrapper">
+            <!-- DATA PIPELINE SECTION -->
+            <div class="flow-section">
+                <div class="section-title">Data Pipeline (Offline/Periodic)</div>
+                
+                <div class="process-flow">
+                    <div class="component">
+                        <div class="step-num">1</div>
+                        <div class="component-icon">🌎</div>
+                        <div>Web Scraping</div>
+                        <div class="component-subtitle">CA Benefits Sites</div>
+                    </div>
+                    
+                    <div class="arrow">→</div>
+                    
+                    <div class="component">
+                        <div class="step-num">2</div>
+                        <div class="component-icon">✨</div>
+                        <div>Data Processing</div>
+                        <div class="component-subtitle">Clean & Normalize</div>
+                    </div>
+                    
+                    <div class="arrow">→</div>
+                    
+                    <div class="component">
+                        <div class="step-num">3</div>
+                        <div class="component-icon">✂️</div>
+                        <div>Chunking</div>
+                        <div class="component-subtitle">Text Segmentation</div>
+                    </div>
+                    
+                    <div class="arrow">→</div>
+                    
+                    <div class="component aws">
+                        <div class="aws-label">AWS</div>
+                        <div class="step-num">4</div>
+                        <div class="component-icon">🔠</div>
+                        <div>Embedding</div>
+                        <div class="component-subtitle">OpenAI API</div>
+                    </div>
+                </div>
+                
+                <div style="text-align: center; margin: 5px 0;">
+                    <div class="arrow-vertical">↓</div>
+                </div>
+                
+                <div style="display: flex; justify-content: center; gap: 20px;">
+                    <div class="component aws" style="width: 160px;">
+                        <div class="aws-label">AWS</div>
+                        <div class="step-num">5</div>
+                        <div class="component-icon">🗃️</div>
+                        <div>Vector DB</div>
+                        <div class="component-subtitle">Pinecone/OpenSearch</div>
+                    </div>
+                    
+                    <div style="font-size: 1.5em; margin-top: 50px;">+</div>
+                    
+                    <div class="component aws" style="width: 160px;">
+                        <div class="aws-label">AWS</div>
+                        <div class="step-num">6</div>
+                        <div class="component-icon">💾</div>
+                        <div>Program Cache</div>
+                        <div class="component-subtitle">S3 + DynamoDB</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- USER INTERACTION SECTION -->
+            <div class="flow-section green">
+                <div class="section-title">User Interaction Flow (Real-Time)</div>
+                
+                <div class="process-flow">
+                    <div class="user-icon">👤</div>
+                    
+                    <div class="arrow">→</div>
+                    
+                    <div class="component green-border">
+                        <div class="step-num green">7</div>
+                        <div class="component-icon">💬</div>
+                        <div>User Query</div>
+                        <div class="component-subtitle">HTML/React</div>
+                    </div>
+                    
+                    <div class="arrow">→</div>
+                    
+                    <div class="component purple-border">
+                        <div class="step-num" style="background-color: #805ad5;">8</div>
+                        <div class="component-icon">⚡</div>
+                        <div>FastAPI Backend</div>
+                        <div class="component-subtitle">Routes + Session</div>
+                    </div>
+                    
+                    <div class="arrow">→</div>
+                    
+                    <div class="component aws">
+                        <div class="aws-label">AWS</div>
+                        <div class="step-num">9</div>
+                        <div class="component-icon">🔍</div>
+                        <div>RAG Retrieval</div>
+                        <div class="component-subtitle">Vector DB + Cache</div>
+                    </div>
+                </div>
+                
+                <div style="text-align: center; margin: 5px 0;">
+                    <div class="arrow-vertical">↓</div>
+                </div>
+                
+                <div class="process-flow">
+                    <div class="component green-border">
+                        <div class="step-num green">10</div>
+                        <div class="component-icon">📝</div>
+                        <div>Prompt Template</div>
+                        <div class="component-subtitle">With Context</div>
+                    </div>
+                    
+                    <div class="arrow">→</div>
+                    
+                    <div class="component aws">
+                        <div class="aws-label">AWS</div>
+                        <div class="step-num">11</div>
+                        <div class="component-icon">🤖</div>
+                        <div>AWS Bedrock</div>
+                        <div class="component-subtitle">Claude Model</div>
+                    </div>
+                    
+                    <div class="arrow">→</div>
+                    
+                    <div class="component orange-border">
+                        <div class="step-num orange">12</div>
+                        <div class="component-icon">🏷️</div>
+                        <div>Metadata Extract</div>
+                        <div class="component-subtitle">Programs & Dates</div>
+                    </div>
+                    
+                    <div class="arrow">→</div>
+                    
+                    <div class="component green-border">
+                        <div class="step-num green">13</div>
+                        <div class="component-icon">💬</div>
+                        <div>Chat Response</div>
+                        <div class="component-subtitle">User Interface</div>
+                    </div>
+                    
+                    <div class="arrow">→</div>
+                    
+                    <div class="user-icon">👤</div>
+                </div>
+            </div>
+            
+            <!-- OUTPUT SECTION -->
+            <div class="output-section">
+                <div class="output-title">📱 User-Triggered Outputs</div>
+                
+                <div class="output-container">
+                    <div class="output-box">
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <div class="output-icon">📋</div>
+                            <div>
+                                <div class="output-label">Checklist Generator</div>
+                                <div class="output-desc">PDF with application steps</div>
+                            </div>
+                        </div>
+                        <div class="component-annotation">Session Cache → Program Cache → PDF</div>
+                    </div>
+                    
+                    <div class="output-box">
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <div class="output-icon">📅</div>
+                            <div>
+                                <div class="output-label">Calendar Generator</div>
+                                <div class="output-desc">.ics file with deadlines</div>
+                            </div>
+                        </div>
+                        <div class="component-annotation">Session Cache → Program Cache → .ics</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- LEGEND -->
+        <div class="legend">
+            <div class="legend-item">
+                <div class="legend-color" style="background-color: #ebf8ff;"></div>
+                <div>Data Pipeline (Offline)</div>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background-color: #e6fffa;"></div>
+                <div>User Interaction (Runtime)</div>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background-color: #fffaf0;"></div>
+                <div>Processing/Outputs</div>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background-color: #fffaf0; border-color: #f6ad55;"></div>
+                <div>AWS Components</div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
