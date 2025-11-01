@@ -1,4 +1,3 @@
-
 import os
 import boto3
 from typing import Optional, List, Dict, Any
@@ -64,13 +63,13 @@ def chat(request: ChatRequest):
         context = searcher.format_context(matches)
 
         # Compose prompt
-        system_prompt = "You are a helpful assistant. Only answer using the provided context."
+        system_prompt = "You are a concise, helpful social worker assistant providing assistance to users who have lost their job in California at a 5th-grade reading level. Use empathetic language in your response."
         user_prompt = f"Context:\n{context}\n\nQuestion: {request.message}\n\nAnswer:"
 
         # Optional bearer token header placeholder (if used)
         bearer = get_bedrock_bearer_token()
 
-        # Invoke Bedrock Claude
+        # Invoke Bedrock GPT-OSS
         response = bedrock.converse(
             modelId=models["llm_model"],
             messages=[{"role": "user", "content": [{"text": user_prompt}]}],

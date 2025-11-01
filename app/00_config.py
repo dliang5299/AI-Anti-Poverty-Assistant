@@ -75,7 +75,7 @@ def get_regions():
 def get_models():
     return {
         "embed_model": _get_env("EMBED_MODEL", "text-embedding-3-small"),
-        "llm_model": _get_env("LLM_MODEL", "anthropic.claude-3-5-haiku-20241022-v1:0"),
+        "llm_model": _get_env("LLM_MODEL", "openai.gpt-oss-120b-1:0"),
     }
 
 def get_pinecone_config():
