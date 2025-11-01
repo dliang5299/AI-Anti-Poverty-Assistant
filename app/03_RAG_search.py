@@ -43,3 +43,23 @@ class RAGSearcher:
         for i, m in enumerate(matches, 1):
             parts.append(f"[Source {i}] (Score: {m['score']:.3f}, File: {m['s3_key']})\n{m['text']}\n")
         return "\n".join(parts)
+
+# === UI Integration Wrapper ===
+def get_rag_response(query: str, conversation_history: list, user_context: dict):
+    """Return (response_text, sources, programs) for UI integration.
+    - response_text: str
+    - sources: list of {name,url,date}
+    - programs: list[str]
+    """
+    searcher = RAGSearcher()
+    matches = searcher.search_vectors(query, limit=5)
+    context = searcher.format_context(matches)
+    # Build a plain text answer using retrieved context (basic scaffold; the service will call Bedrock)
+    answer = f"Based on {len(matches)} retrieved chunks, here are findings:\n\n{context}\n\nQuestion: {query}"
+    # Convert our match metadata to UI's source format
+    sources = []
+    for m in matches:
+        name = m.get("s3_key","")
+        sources.append({"name": name or "S3 Document", "url": "", "date": ""})
+    programs = []
+    return answer, sources, programs

@@ -1,39 +1,50 @@
+
 import os
 import boto3
-from typing import Optional
+from typing import Optional, List, Dict, Any
 from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from app.RAGIngest import RAGIngestor
-from app.RAGSearch import RAGSearcher
-from app.config import get_regions, get_models, get_bedrock_bearer_token
+
+from app.02_RAG_ingest import RAGIngestor  # align to app file names
+from app.03_RAG_search import RAGSearcher, get_rag_response
+from app.00_config import get_regions, get_models, get_bedrock_bearer_token
 
 regions = get_regions()
 models = get_models()
 
-app = FastAPI(title="RAG AI Search Service", version="1.1.0")
+app = FastAPI(title="BenefitsFlow RAG API", version="2.0.0")
+
+# Enable broad CORS so the HTML UI can call the API locally or via ALB
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # Bedrock client in us-west-2
 bedrock = boto3.client("bedrock-runtime", region_name=regions["bedrock"])
 
-# RAG components
-ingestor = RAGIngestor()
-searcher = RAGSearcher()
-
+# Schemas expected by the UI backend
 class IngestRequest(BaseModel):
     bucket: str
     prefix: Optional[str] = ""
 
 class ChatRequest(BaseModel):
-    query: str
-    top_k: Optional[int] = 5
-    max_tokens: Optional[int] = 500
-    temperature: Optional[float] = 0.7
+    message: str
+    situation: Optional[str] = None
+    conversation_history: List[Dict[str, Any]] = []
 
 class ChatResponse(BaseModel):
-    query: str
-    answer: str
-    sources: list
-    context_used: str
+    response: str
+    sources: List[Dict[str, str]] = []
+    programs: List[str] = []
+
+# Instantiate components
+ingestor = RAGIngestor()
+searcher = RAGSearcher()
 
 @app.post("/ingest")
 def ingest(request: IngestRequest):
@@ -46,38 +57,40 @@ def ingest(request: IngestRequest):
 
 @app.post("/chat", response_model=ChatResponse)
 def chat(request: ChatRequest):
+    """Match UI's expected /chat contract and return {response, sources, programs}."""
     try:
-        matches = searcher.search_vectors(request.query, limit=request.top_k or 5)
+        # Retrieve context with our searcher
+        matches = searcher.search_vectors(request.message, limit=5)
         context = searcher.format_context(matches)
 
-        system_prompt = "You are a helpful AI assistant. Answer based on the provided context."
-        user_prompt = f"Context:\n{context}\n\nQuestion: {request.query}\n\nAnswer:"
+        # Compose prompt
+        system_prompt = "You are a helpful assistant. Only answer using the provided context."
+        user_prompt = f"Context:\n{context}\n\nQuestion: {request.message}\n\nAnswer:"
 
-        # Optional bearer token header if provided via Secrets Manager
-        extra_headers = {}
+        # Optional bearer token header placeholder (if used)
         bearer = get_bedrock_bearer_token()
-        if bearer:
-            extra_headers["x-amz-bedrock-bearer"] = bearer
 
+        # Invoke Bedrock Claude
         response = bedrock.converse(
             modelId=models["llm_model"],
             messages=[{"role": "user", "content": [{"text": user_prompt}]}],
-            inferenceConfig={
-                "maxTokens": request.max_tokens or 500,
-                "temperature": float(request.temperature or 0.7)
-            },
+            inferenceConfig={"maxTokens": 600, "temperature": 0.5},
             system=[{"text": system_prompt}],
-            # Pass optional headers if needed (botocore may not accept arbitrary headers; include here for clarity)
-            # headers=extra_headers
         )
 
-        answer = response["output"]["message"]["content"][0]["text"]
-        sources = [
-            {"file": m["s3_key"], "score": m["score"], "chunk_index": m["chunk_index"]}
-            for m in matches
-        ]
+        text = response["output"]["message"]["content"][0]["text"] if "output" in response else ""
 
-        return ChatResponse(query=request.query, answer=answer, sources=sources, context_used=context)
+        # Convert sources to UI shape
+        srcs = []
+        for m in matches:
+            name = m.get("s3_key","")
+            srcs.append({"name": name or "S3 Document", "url": "", "date": ""})
+
+        # Programs placeholder (integration point for BenefitsFlow specific outputs)
+        programs: List[str] = []
+
+        return ChatResponse(response=text, sources=srcs, programs=programs)
+
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
