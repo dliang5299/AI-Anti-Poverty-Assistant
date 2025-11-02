@@ -5,9 +5,9 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
-from app.02_RAG_ingest import RAGIngestor  # align to app file names
-from app.03_RAG_search import RAGSearcher, get_rag_response
-from app.00_config import get_regions, get_models, get_bedrock_bearer_token
+from app.RAG_ingest import RAGIngestor  # align to app file names
+from app.RAG_search import RAGSearcher
+from app.config import get_regions, get_models, get_bedrock_bearer_token
 
 regions = get_regions()
 models = get_models()
