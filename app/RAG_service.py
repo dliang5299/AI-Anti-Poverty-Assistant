@@ -6,7 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
 from app.RAG_ingest import RAGIngestor  # align to app file names
-from app.RAG_search import RAGSearcher
+from app.RAG_search import RAGSearcher, get_rag_response
 from app.config import get_regions, get_models, get_bedrock_bearer_token
 
 regions = get_regions()
