@@ -5,16 +5,16 @@ Handles API requests from the HTML frontend
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse, HTMLResponse
+from fastapi.responses import FileResponse, HTMLResponse, Response
 from fastapi.staticfiles import StaticFiles
 from starlette.middleware.base import BaseHTTPMiddleware
 from pydantic import BaseModel
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 import json
 import os
 import time
 from pathlib import Path
-from datetime import datetime
+from datetime import datetime, timedelta
 import io
 
 # Import your existing modules
@@ -58,7 +58,7 @@ app.add_middleware(
 # Pydantic models for request/response
 class ChatRequest(BaseModel):
     message: str
-    situation: str = None
+    situation: Optional[str] = None
     conversation_history: List[Dict[str, Any]] = []
 
 class ChatResponse(BaseModel):
@@ -67,8 +67,9 @@ class ChatResponse(BaseModel):
     programs: List[str] = []
 
 class DownloadRequest(BaseModel):
-    situation: str = None
+    situation: Optional[str] = None
     conversation_history: List[Dict[str, Any]] = []
+    programs: List[str] = []
 
 # Serve static files (images, CSS, etc.)
 static_dir = Path(__file__).parent
@@ -121,27 +122,90 @@ async def download_checklist(request: DownloadRequest):
     Generate and download a personalized checklist as a text file
     """
     try:
-        # Generate checklist using your existing logic
-        checklist_items = generate_checklist(
-            request.conversation_history,
-            {"situation": request.situation} if request.situation else {}
-        )
+        # Validate request
+        if not isinstance(request.conversation_history, list):
+            request.conversation_history = []
+        if not isinstance(request.programs, list):
+            request.programs = []
+        
+        # Validate input and extract programs from conversation
+        all_programs = set()
+        if request.programs:
+            all_programs.update(request.programs)
+        
+        # Extract programs from conversation history (from assistant messages with programs field)
+        for msg in request.conversation_history:
+            if msg.get('role') == 'assistant' and msg.get('programs'):
+                if isinstance(msg['programs'], list):
+                    all_programs.update(msg['programs'])
+            # Also check if programs are mentioned in content
+            content = msg.get('content', '').lower()
+            program_keywords = {
+                'calfresh': 'CalFresh',
+                'medi-cal': 'Medi-Cal',
+                'unemployment': 'Unemployment Insurance',
+                'calworks': 'CalWORKs',
+                'section 8': 'Section 8',
+                'covered california': 'Covered California'
+            }
+            for keyword, program in program_keywords.items():
+                if keyword in content:
+                    all_programs.add(program)
+        
+        if not request.conversation_history and not request.situation:
+            # Generate a generic checklist if no conversation
+            conversation_history = []
+            user_context = {"programs": list(all_programs)}
+        else:
+            conversation_history = request.conversation_history
+            user_context = {
+                "situation": request.situation,
+                "programs": list(all_programs)
+            } if request.situation else {"programs": list(all_programs)}
+        
+        # Generate checklist using your existing logic with programs
+        try:
+            print(f"Generating checklist with {len(conversation_history)} messages and programs: {list(all_programs)}")
+            checklist_items = generate_checklist(conversation_history, user_context)
+            print(f"Generated {len(checklist_items)} checklist items")
+        except Exception as gen_error:
+            import traceback
+            print(f"Error in generate_checklist: {str(gen_error)}")
+            print(traceback.format_exc())
+            # Fallback to generic checklist
+            checklist_items = generate_checklist([], {})
+        
+        if not checklist_items or len(checklist_items) == 0:
+            print("Checklist items empty, generating fallback")
+            checklist_items = generate_checklist([], {})
         
         # Format checklist items into readable text
         checklist_text = []
-        for i, item in enumerate(checklist_items, 1):
-            checklist_text.append(f"{i}. {item['title']}")
-            checklist_text.append(f"   {item['description']}")
-            if item.get('deadline'):
-                checklist_text.append(f"   Deadline: {item['deadline']}")
-            checklist_text.append("   Action Items:")
-            for detail in item.get('details', []):
-                checklist_text.append(f"     • {detail}")
-            if item.get('link'):
-                checklist_text.append(f"   Website: {item['link']}")
-            checklist_text.append("")  # Empty line between items
+        try:
+            for i, item in enumerate(checklist_items, 1):
+                if not isinstance(item, dict):
+                    continue
+                checklist_text.append(f"{i}. {item.get('title', 'Item')}")
+                checklist_text.append(f"   {item.get('description', '')}")
+                if item.get('deadline'):
+                    checklist_text.append(f"   Deadline: {item['deadline']}")
+                if item.get('details') and isinstance(item['details'], list):
+                    checklist_text.append("   Action Items:")
+                    for detail in item['details']:
+                        if detail:
+                            checklist_text.append(f"     • {detail}")
+                if item.get('link'):
+                    checklist_text.append(f"   Website: {item['link']}")
+                checklist_text.append("")  # Empty line between items
+        except Exception as format_error:
+            print(f"Error formatting checklist items: {format_error}")
+            # Fallback to simple format
+            for i, item in enumerate(checklist_items, 1):
+                checklist_text.append(f"{i}. {str(item.get('title', 'Item'))}")
         
         # Build complete text file content
+        checklist_body = chr(10).join(checklist_text) if checklist_text else "No checklist items generated."
+        
         content = f"""BenefitsFlow Personalized Checklist
 Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
 {'=' * 60}
@@ -153,7 +217,7 @@ Your Situation: {request.situation or 'General'}
 CHECKLIST ITEMS:
 {'=' * 60}
 
-{chr(10).join(checklist_text)}
+{checklist_body}
 
 {'=' * 60}
 
@@ -183,66 +247,137 @@ For questions or assistance, visit: https://benefitscal.com
         # Create file in memory as text/plain
         file_content = content.encode('utf-8')
         
-        return FileResponse(
-            io.BytesIO(file_content),
+        filename = f'benefits-checklist-{datetime.now().strftime("%Y%m%d")}.txt'
+        
+        return Response(
+            content=file_content,
             media_type='text/plain',
-            filename=f'benefits-checklist-{datetime.now().strftime("%Y%m%d")}.txt',
-            headers={"Content-Disposition": f'attachment; filename="benefits-checklist-{datetime.now().strftime("%Y%m%d")}.txt"'}
+            headers={
+                "Content-Disposition": f"attachment; filename={filename}",
+                "Content-Length": str(len(file_content))
+            }
         )
         
     except Exception as e:
+        import traceback
+        error_detail = traceback.format_exc()
+        print(f"Checklist download error: {error_detail}")
         raise HTTPException(status_code=500, detail=f"Error generating checklist: {str(e)}")
 
 @app.post("/api/download/calendar")
 async def download_calendar(request: DownloadRequest):
     """
-    Generate and download a calendar file (.ics)
+    Generate and download a calendar file (.ics) based on actual conversation programs
     """
     try:
-        # Generate calendar events based on conversation
+        # Extract programs from conversation (same logic as checklist)
+        all_programs = set()
+        if request.programs:
+            all_programs.update(request.programs)
+        
+        # Extract programs from conversation history
+        for msg in request.conversation_history:
+            if msg.get('role') == 'assistant' and msg.get('programs'):
+                if isinstance(msg['programs'], list):
+                    all_programs.update(msg['programs'])
+            content = msg.get('content', '').lower()
+            program_keywords = {
+                'calfresh': 'CalFresh',
+                'medi-cal': 'Medi-Cal',
+                'unemployment': 'Unemployment Insurance',
+                'calworks': 'CalWORKs',
+                'section 8': 'Section 8',
+                'covered california': 'Covered California'
+            }
+            for keyword, program in program_keywords.items():
+                if keyword in content:
+                    all_programs.add(program)
+        
+        # Generate calendar events based on ACTUAL programs mentioned
+        base_date = datetime.now() + timedelta(days=1)
+        events = []
+        
+        event_num = 1
+        programs_list = list(all_programs)
+        
+        # If no programs, create generic events
+        if not programs_list:
+            programs_list = ['CalFresh', 'Medi-Cal', 'Unemployment Insurance']
+        
+        calendar_events = {
+            'CalFresh': {
+                'summary': 'Apply for CalFresh',
+                'description': 'Apply for CalFresh food assistance program',
+                'url': 'https://benefitscal.com',
+                'days_offset': 1
+            },
+            'Medi-Cal': {
+                'summary': 'Apply for Medi-Cal',
+                'description': 'Apply for Medi-Cal health insurance',
+                'url': 'https://benefitscal.com',
+                'days_offset': 3
+            },
+            'Unemployment Insurance': {
+                'summary': 'Apply for Unemployment Insurance',
+                'description': 'File your unemployment insurance claim',
+                'url': 'https://edd.ca.gov',
+                'days_offset': 0
+            },
+            'CalWORKs': {
+                'summary': 'Apply for CalWORKs',
+                'description': 'Apply for CalWORKs cash assistance',
+                'url': 'https://benefitscal.com',
+                'days_offset': 2
+            },
+            'Section 8': {
+                'summary': 'Contact Housing Authority',
+                'description': 'Apply for Section 8 housing assistance',
+                'url': 'https://211california.org',
+                'days_offset': 2
+            }
+        }
+        
+        days_offset = 0
+        for program in programs_list[:5]:  # Limit to 5 events
+            if program in calendar_events:
+                event_info = calendar_events[program]
+                event_date = base_date + timedelta(days=days_offset)
+                
+                events.append(f"""BEGIN:VEVENT
+UID:benefitsflow-{event_num}@benefitsflow.com
+DTSTAMP:{datetime.now().strftime('%Y%m%dT%H%M%SZ')}
+DTSTART:{event_date.strftime('%Y%m%dT090000Z')}
+DTEND:{event_date.strftime('%Y%m%dT100000Z')}
+SUMMARY:{event_info['summary']}
+DESCRIPTION:{event_info['description']}
+LOCATION:Online Application
+URL:{event_info['url']}
+END:VEVENT""")
+                
+                event_num += 1
+                days_offset += 3  # Space events 3 days apart
+        
         ics_content = f"""BEGIN:VCALENDAR
 VERSION:2.0
 PRODID:-//BenefitsFlow//Benefits Calendar//EN
-BEGIN:VEVENT
-UID:benefitsflow-1@example.com
-DTSTAMP:{datetime.now().strftime('%Y%m%dT%H%M%SZ')}
-DTSTART:20250115T090000Z
-DTEND:20250115T100000Z
-SUMMARY:Apply for CalFresh
-DESCRIPTION:Apply for CalFresh food assistance program
-LOCATION:Online Application
-URL:https://benefitscal.com
-END:VEVENT
-BEGIN:VEVENT
-UID:benefitsflow-2@example.com
-DTSTAMP:{datetime.now().strftime('%Y%m%dT%H%M%SZ')}
-DTSTART:20250120T090000Z
-DTEND:20250120T100000Z
-SUMMARY:Apply for Medi-Cal
-DESCRIPTION:Apply for Medi-Cal health insurance
-LOCATION:Online Application
-URL:https://benefitscal.com
-END:VEVENT
-BEGIN:VEVENT
-UID:benefitsflow-3@example.com
-DTSTAMP:{datetime.now().strftime('%Y%m%dT%H%M%SZ')}
-DTSTART:20250125T090000Z
-DTEND:20250125T100000Z
-SUMMARY:Check Unemployment Benefits
-DESCRIPTION:Review unemployment insurance eligibility
-LOCATION:Online Application
-URL:https://edd.ca.gov
-END:VEVENT
+CALSCALE:GREGORIAN
+METHOD:PUBLISH
+X-WR-CALNAME:California Benefits Important Dates
+X-WR-CALDESC:Important dates for California benefits programs based on your conversation
+X-WR-TIMEZONE:America/Los_Angeles
+{chr(10).join(events)}
 END:VCALENDAR"""
         
         # Create file in memory
         file_content = ics_content.encode('utf-8')
         
-        return FileResponse(
-            io.BytesIO(file_content),
+        return Response(
+            content=file_content,
             media_type='text/calendar',
-            filename='benefits-calendar.ics',
-            headers={"Content-Disposition": "attachment; filename=benefits-calendar.ics"}
+            headers={
+                "Content-Disposition": "attachment; filename=benefits-calendar.ics",
+                "Content-Length": str(len(file_content))
+            }
         )
         
     except Exception as e:

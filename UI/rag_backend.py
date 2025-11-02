@@ -274,7 +274,7 @@ def generate_checklist(conversation_history: List[Dict], user_context: Dict) -> 
     
     Args:
         conversation_history: List of messages in the conversation
-        user_context: Extracted context about user's situation
+        user_context: Extracted context about user's situation (includes 'programs' list)
     
     Returns:
         List of checklist items
@@ -282,7 +282,10 @@ def generate_checklist(conversation_history: List[Dict], user_context: Dict) -> 
     # In production, this would use AI to analyze the conversation
     # and generate personalized action items
     
-    # For demo, we'll generate a generic checklist based on common scenarios
+    # Get programs from user_context (from actual conversation)
+    programs_mentioned = user_context.get('programs', [])
+    
+    # For demo, we'll generate a checklist based on actual programs mentioned
     checklist_items = []
     
     # Always include document gathering
@@ -302,11 +305,28 @@ def generate_checklist(conversation_history: List[Dict], user_context: Dict) -> 
         'priority': 'high'
     })
     
-    # Add program-specific items based on conversation
-    conversation_text = ' '.join([msg['content'] for msg in conversation_history])
-    conversation_lower = conversation_text.lower()
+    # Add program-specific items based on ACTUAL programs mentioned in conversation
+    # Use programs from user_context first, then fallback to keyword matching
+    conversation_text = ''
+    if conversation_history:
+        try:
+            conversation_text = ' '.join([
+                str(msg.get('content', '')) if isinstance(msg, dict) else str(msg)
+                for msg in conversation_history
+            ])
+        except Exception as e:
+            print(f"Error processing conversation history: {e}")
+            conversation_text = ''
     
-    if any(keyword in conversation_lower for keyword in ['job', 'unemployment', 'lost', 'fired']):
+    conversation_lower = conversation_text.lower() if conversation_text else ''
+    
+    # Check if specific programs were mentioned
+    has_unemployment = 'unemployment' in str(programs_mentioned).lower() or any(keyword in conversation_lower for keyword in ['job', 'unemployment', 'lost', 'fired'])
+    has_food = 'calfresh' in str(programs_mentioned).lower() or any(keyword in conversation_lower for keyword in ['food', 'calfresh', 'hungry', 'groceries'])
+    has_health = 'medi-cal' in str(programs_mentioned).lower() or any(keyword in conversation_lower for keyword in ['health', 'medical', 'medi-cal', 'insurance'])
+    has_housing = 'section 8' in str(programs_mentioned).lower() or 'housing' in str(programs_mentioned).lower() or any(keyword in conversation_lower for keyword in ['housing', 'rent', 'homeless', 'shelter'])
+    
+    if has_unemployment:
         checklist_items.append({
             'title': 'Apply for Unemployment Insurance',
             'description': 'File your UI claim as soon as possible after job loss:',
@@ -323,7 +343,7 @@ def generate_checklist(conversation_history: List[Dict], user_context: Dict) -> 
             'link': 'https://edd.ca.gov'
         })
     
-    if any(keyword in conversation_lower for keyword in ['food', 'calfresh', 'hungry', 'groceries']):
+    if has_food:
         checklist_items.append({
             'title': 'Submit CalFresh Application',
             'description': 'Apply for food assistance benefits:',
@@ -340,7 +360,7 @@ def generate_checklist(conversation_history: List[Dict], user_context: Dict) -> 
             'link': 'https://benefitscal.com'
         })
     
-    if any(keyword in conversation_lower for keyword in ['health', 'medical', 'medi-cal', 'insurance']):
+    if has_health:
         checklist_items.append({
             'title': 'Check Medi-Cal Eligibility',
             'description': 'See if you qualify for health coverage:',
@@ -357,7 +377,7 @@ def generate_checklist(conversation_history: List[Dict], user_context: Dict) -> 
             'link': 'https://benefitscal.com'
         })
     
-    if any(keyword in conversation_lower for keyword in ['housing', 'rent', 'homeless', 'shelter']):
+    if has_housing:
         checklist_items.append({
             'title': 'Contact Housing Resources',
             'description': 'Get help with housing needs:',

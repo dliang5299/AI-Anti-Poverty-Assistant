@@ -31,7 +31,9 @@ def main():
     # Install dependencies if not already installed
     print("Installing/updating dependencies...")
     try:
-        subprocess.run([sys.executable, "-m", "pip", "install", "-r", "requirements.txt"], 
+        # Try requirements_ui.txt first, fallback to requirements.txt
+        req_file = "requirements_ui.txt" if Path("requirements_ui.txt").exists() else "requirements.txt"
+        subprocess.run([sys.executable, "-m", "pip", "install", "-r", req_file], 
                       check=True, capture_output=True)
         print("Dependencies verified.")
     except subprocess.CalledProcessError as e:
@@ -48,7 +50,7 @@ def main():
         # Check if backend is running
         try:
             import requests
-            response = requests.get("http://localhost:8000/health", timeout=5)
+            response = requests.get("http://localhost:8000/api/health", timeout=5)
             if response.status_code == 200:
                 print("FastAPI backend is running successfully.")
             else:
@@ -63,15 +65,14 @@ def main():
         return
     
     # Open the HTML frontend in the browser
-    print("Opening HTML frontend in browser...")
-    html_file_path = Path("benefitsflow_frontend.html").resolve()
-    webbrowser.open_new_tab(f"file://{html_file_path}")
+    print("Opening BenefitsFlow in browser...")
+    time.sleep(1)  # Give backend a moment to fully start
+    webbrowser.open_new_tab("http://localhost:8000")
     
     print("\n" + "="*60)
     print("BenefitsFlow Application Status: RUNNING")
-    print(f"HTML Frontend: {html_file_path}")
-    print(f"FastAPI Backend: http://localhost:8000")
-    print(f"API Documentation: http://localhost:8000/docs")
+    print(f"Frontend + Backend: http://localhost:8000")
+    print(f"API Documentation: http://localhost:8000/api/docs")
     print("="*60)
     print("\nNotes:")
     print("- The HTML frontend will work even if the API is not running (demo mode)")
