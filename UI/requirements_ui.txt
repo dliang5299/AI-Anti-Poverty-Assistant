@@ -1,0 +1,14 @@
+# Core FastAPI dependencies
+fastapi>=0.104.0
+uvicorn>=0.24.0
+pydantic>=2.0.0
+
+# HTTP client (for future RAG integration)
+httpx>=0.24.0
+requests>=2.28.0
+
+# Optional: For generating PDFs in the future
+# reportlab>=4.0.0
+
+# Note: You may not need all packages from requirements.txt
+# This is a minimal set for FastAPI + HTML frontend
