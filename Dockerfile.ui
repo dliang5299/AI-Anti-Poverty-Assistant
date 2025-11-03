@@ -1,7 +1,7 @@
 # Dockerfile for BenefitsFlow FastAPI Backend + HTML Frontend
 FROM python:3.11-slim
 
-WORKDIR /app
+WORKDIR /ui
 
 # Copy requirements and install dependencies
 # Using minimal requirements for FastAPI + HTML frontend
@@ -9,10 +9,10 @@ COPY ui/requirements.txt /tmp/requirements.txt
 RUN pip install --no-cache-dir -r /tmp/requirements.txt || pip install --no-cache-dir fastapi uvicorn pydantic httpx requests
 
 # Copy application code
-COPY ui /ui/ui
+COPY ui /ui
 
-# Expose port 8000 for FastAPI
+# Expose port 5173 for FastAPI
 EXPOSE 5173
 
 # Run FastAPI with uvicorn
-CMD ["uvicorn", "ui.fastapi_backend:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["uvicorn", "fastapi_backend:app", "--host", "0.0.0.0", "--port", "5173"]

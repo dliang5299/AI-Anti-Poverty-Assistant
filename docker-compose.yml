@@ -5,6 +5,8 @@ services:
       dockerfile: Dockerfile.api
     env_file:
       - docker.env
+    volumes:
+      - ~/.aws:/root/.aws:ro
     environment:
       - S3_REGION=${S3_REGION:-us-west-2}
       - PINECONE_REGION=${PINECONE_REGION:-us-east-1}
@@ -24,6 +26,8 @@ services:
       dockerfile: Dockerfile.ui
     env_file:
       - docker.env
+    volumes:
+      - ~/.aws:/root/.aws:ro
     environment:
       - RAG_API_URL=http://app:8000
     ports:
