@@ -1,66 +1,29 @@
-
 import os
 import json
 import boto3
 from functools import lru_cache
 from typing import Optional, Dict, Any
 
-"""
-Centralized configuration that favors environment variables but will fall back
-to AWS Secrets Manager when *_SECRET_ARN environment variables are provided.
-
-Supported env vars:
-  # Regions
-  S3_REGION                  (default "us-west-2")
-  PINECONE_REGION            (default "us-east-1")
-  PINECONE_ENV               (default "aws-us-east-1")
-  BEDROCK_REGION             (default "us-east-1")
-
-  # Direct secrets (preferred for local dev)
-  OPENAI_API_KEY
-  PINECONE_API_KEY
-
-  # Secret ARNs (preferred for prod)
-  OPENAI_API_KEY_SECRET_ARN
-  PINECONE_API_KEY_SECRET_ARN
-  AWS_BEDROCK_BEARER_TOKEN_SECRET_ARN
-
-  # Pinecone index settings
-  PINECONE_INDEX_NAME        (default "knowledge")
-  PINECONE_DIM               (default "1536")
-
-  # Model IDs
-  EMBED_MODEL                (default "text-embedding-3-small")
-  LLM_MODEL                  (default "openai.gpt-oss-120b-1:0")
-"""
-
 def _get_env(name: str, default: Optional[str] = None) -> Optional[str]:
     return os.getenv(name, default)
 
-def _aws_region_fallback() -> str:
+def _region_fallback() -> str:
     return _get_env("BEDROCK_REGION") or _get_env("S3_REGION") or "us-west-2"
 
 def _fetch_secret(secret_arn: str, region: Optional[str] = None) -> Optional[str]:
-    """Fetch secret string from AWS Secrets Manager (returns None if not found)."""
+    sm = boto3.client("secretsmanager", region_name=region or _region_fallback())
+    resp = sm.get_secret_value(SecretId=secret_arn)
+    val = resp.get("SecretString")
+    if not val and "SecretBinary" in resp:
+        val = resp["SecretBinary"].decode("utf-8", errors="ignore")
     try:
-        sm = boto3.client("secretsmanager", region_name=region or _aws_region_fallback())
-        resp = sm.get_secret_value(SecretId=secret_arn)
-        val = resp.get("SecretString")
-        if not val and "SecretBinary" in resp:
-            val = resp["SecretBinary"].decode("utf-8", errors="ignore")
-        # Allow JSON secrets: return the first plausible key if JSON
-        try:
-            obj = json.loads(val)
-            # Common key names
-            for k in ("OPENAI_API_KEY", "api_key", "token", "PINECONE_API_KEY", "key"):
-                if k in obj and isinstance(obj[k], str) and obj[k]:
-                    return obj[k]
-            # else just return stringified JSON
-            return val
-        except json.JSONDecodeError:
-            return val
-    except Exception:
-        return None
+        obj = json.loads(val)
+        for k in ("OPENAI_API_KEY","PINECONE_API_KEY","api_key","token","key"):
+            if k in obj and isinstance(obj[k], str) and obj[k]:
+                return obj[k]
+        return val
+    except json.JSONDecodeError:
+        return val
 
 @lru_cache(maxsize=None)
 def get_regions() -> Dict[str,str]:
@@ -88,29 +51,23 @@ def get_pinecone_config() -> Dict[str,Any]:
 
 @lru_cache(maxsize=None)
 def get_openai_api_key() -> str:
-    # Prefer explicit env var
-    key = _get_env("OPENAI_API_KEY")
-    if key:
-        return key
-    # Fallback to secret manager
     arn = _get_env("OPENAI_API_KEY_SECRET_ARN")
-    if arn:
-        sec = _fetch_secret(arn, get_regions()["bedrock"])  # region doesn't really matter
-        if sec:
-            return sec
-    raise RuntimeError("OPENAI_API_KEY not set (env) and OPENAI_API_KEY_SECRET_ARN not resolvable.")
+    if not arn:
+        raise RuntimeError("OPENAI_API_KEY_SECRET_ARN is required (ARN-only build).")
+    key = _fetch_secret(arn, get_regions()["bedrock"])
+    if not key:
+        raise RuntimeError("Failed to resolve OPENAI API key from Secrets Manager.")
+    return key
 
 @lru_cache(maxsize=None)
 def get_pinecone_api_key() -> str:
-    key = _get_env("PINECONE_API_KEY")
-    if key:
-        return key
     arn = _get_env("PINECONE_API_KEY_SECRET_ARN")
-    if arn:
-        sec = _fetch_secret(arn, get_regions()["pinecone"])
-        if sec:
-            return sec
-    raise RuntimeError("PINECONE_API_KEY not set (env) and PINECONE_API_KEY_SECRET_ARN not resolvable.")
+    if not arn:
+        raise RuntimeError("PINECONE_API_KEY_SECRET_ARN is required (ARN-only build).")
+    key = _fetch_secret(arn, get_regions()["pinecone"])
+    if not key:
+        raise RuntimeError("Failed to resolve PINECONE API key from Secrets Manager.")
+    return key
 
 @lru_cache(maxsize=None)
 def get_bedrock_bearer_token() -> Optional[str]:

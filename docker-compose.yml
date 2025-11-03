@@ -1,30 +1,20 @@
-
 version: "3.8"
 services:
   app:
     build:
       context: .
       dockerfile: Dockerfile.app
+    env_file:
+      - docker.env
     environment:
-      # AWS auth (or use IAM roles when running in ECS/EKS)
-      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
-      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
-      - AWS_SESSION_TOKEN=${AWS_SESSION_TOKEN}
-      # Regions
       - S3_REGION=${S3_REGION:-us-west-2}
       - PINECONE_REGION=${PINECONE_REGION:-us-east-1}
       - PINECONE_ENV=${PINECONE_ENV:-aws-us-east-1}
       - BEDROCK_REGION=${BEDROCK_REGION:-us-east-1}
-      # Secrets: either direct keys or Secret ARNs
-      - OPENAI_API_KEY=${OPENAI_API_KEY}
       - OPENAI_API_KEY_SECRET_ARN=${OPENAI_API_KEY_SECRET_ARN}
-      - PINECONE_API_KEY=${PINECONE_API_KEY}
       - PINECONE_API_KEY_SECRET_ARN=${PINECONE_API_KEY_SECRET_ARN}
-      - AWS_BEDROCK_BEARER_TOKEN_SECRET_ARN=${AWS_BEDROCK_BEARER_TOKEN_SECRET_ARN}
-      # Pinecone index
       - PINECONE_INDEX_NAME=${PINECONE_INDEX_NAME:-knowledge}
       - PINECONE_DIM=${PINECONE_DIM:-1536}
-      # Models
       - EMBED_MODEL=${EMBED_MODEL:-text-embedding-3-small}
       - LLM_MODEL=${LLM_MODEL:-openai.gpt-oss-120b-1:0}
     ports:
@@ -33,6 +23,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.ui
+    env_file:
+      - docker.env
     environment:
       - RAG_API_URL=http://app:8000
     ports:

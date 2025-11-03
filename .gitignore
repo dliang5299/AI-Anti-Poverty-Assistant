@@ -17,6 +17,7 @@ venv/
 *.env
 .env.*
 !*.env.example  # keep example env but ignore real ones
+docker.env
 
 # Local configuration
 *.local
