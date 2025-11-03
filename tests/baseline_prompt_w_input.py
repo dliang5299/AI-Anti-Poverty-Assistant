@@ -1,0 +1,77 @@
+import boto3
+import pandas as pd
+from datetime import datetime
+
+REGION = "us-west-2"
+
+# Check models available for on-demand inference
+# control_client = boto3.client("bedrock", region_name=REGION)
+# on_demand_list = control_client.list_foundation_models(
+#     byInferenceType="ON_DEMAND"
+# )
+# for model in on_demand_list["modelSummaries"]:
+#     print(model["modelId"], model.get("inferenceTypesSupported"))
+
+# List of selected on-demand inference models
+MODELS = [
+    "anthropic.claude-3-5-sonnet-20241022-v2:0",
+    "meta.llama3-1-70b-instruct-v1:0",
+    "openai.gpt-oss-120b-1:0",
+]
+
+today = datetime.today().strftime("%Y-%m-%d")
+system_instructions = (
+    f"You are a concise, helpful social worker assistant providing assistance to users who have lost their job in California at a 5th-grade reading level. Explain program basics, eligibility, steps, necessary documents, timelines; include county-variation note. Suggest other programs that may be relevant even if not directly asked given the context. Do not guarantee approval or benefit amounts. Do not generalize county-specific rules without stating they vary by county. Do not provide outdated income limits or timelines. Do not give legal/financial advice beyond program guidance. Do not fabricate citations or sources. Use empathetic language in your response. Today's date is {today}."
+)
+
+df_input = pd.read_csv("tests/gold_dataset.csv")
+prompts_df = df_input.drop_duplicates(subset=["user_question"], keep="first")
+user_prompts = prompts_df["user_question"].dropna().tolist()
+id_map = dict(zip(prompts_df["user_question"], prompts_df["id"]))
+
+# Create Bedrock client once
+client = boto3.client("bedrock-runtime", region_name=REGION)
+
+# Initialize results list
+results = []
+
+# Loop through questions by model
+model_num = 1
+for MODEL_ID in MODELS:
+    print("Working on", MODEL_ID)
+    for user_prompt in user_prompts:
+        messages = [{"role": "user", "content": [{"text": user_prompt}]}]
+
+        response = client.converse(
+            modelId=MODEL_ID,
+            system=[{"text": system_instructions}],
+            messages=messages,
+            inferenceConfig={
+                "maxTokens": 512,
+                "temperature": 0.3,
+                "topP": 0.9
+            }
+        )
+
+        model_answer = "".join(
+            part.get("text", "") for part in response["output"]["message"]["content"]
+        )
+
+        # Append a row to the results list
+        results.append({
+            "model_num": model_num,
+            "model_id": MODEL_ID,
+            "user_prompt": user_prompt,
+            "id": id_map.get(user_prompt),
+                        "model_answer": model_answer
+        })
+
+    model_num += 1
+
+# Convert list of dicts to DataFrame
+df = pd.DataFrame(results)
+
+# Save to CSV
+output_path = f"tests/{today}_baseline_model_responses.csv"
+df.to_csv(output_path, index=False)
+print(f"✅ Saved results to {output_path}")
