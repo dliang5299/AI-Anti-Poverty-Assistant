@@ -1,11 +1,14 @@
-import os
+# --- imports (near top of file) ---
+import os, json
 import boto3
 from typing import Optional, List, Dict, Any
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
+from functools import lru_cache
+from botocore.exceptions import ProfileNotFound
 
-from app.RAG_ingest import RAGIngestor  # align to app file names
+from app.RAG_ingest import RAGIngestor
 from app.RAG_search import RAGSearcher, get_rag_response
 from app.config import get_regions, get_models, get_bedrock_bearer_token
 
@@ -14,7 +17,6 @@ models = get_models()
 
 app = FastAPI(title="BenefitsFlow RAG API", version="2.0.0")
 
-# Enable broad CORS so the HTML UI can call the API locally or via ALB
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -23,10 +25,63 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Bedrock client in us-west-2
-bedrock = boto3.client("bedrock-runtime", region_name=regions["bedrock"])
+# --- robust Bedrock client (lazy) ---
+@lru_cache(maxsize=None)
+def get_bedrock():
+    try:
+        return boto3.client("bedrock-runtime", region_name=regions["bedrock"])
+    except ProfileNotFound:
+        os.environ.pop("AWS_PROFILE", None)
+        return boto3.client("bedrock-runtime", region_name=regions["bedrock"])
 
-# Schemas expected by the UI backend
+# --- parse Bedrock output safely across providers/APIs ---
+def _extract_text_from_bedrock(resp: dict | bytes | str) -> str:
+    if isinstance(resp, (bytes, str)):
+        try:
+            resp = json.loads(resp)
+        except Exception:
+            return ""
+
+    # Converse shape: output.message.content = [{"type":"text","text":"..."}]
+    try:
+        parts = (
+            resp.get("output", {})
+                .get("message", {})
+                .get("content", [])
+        )
+        if isinstance(parts, list):
+            texts = []
+            for p in parts:
+                if isinstance(p, dict) and "text" in p:
+                    texts.append(p["text"])
+            if texts:
+                return "\n".join(texts).strip()
+    except Exception:
+        pass
+
+    # Anthropic invoke_model: {"content":[{"type":"text","text":"..."}], ...}
+    try:
+        content = resp.get("content")
+        if isinstance(content, list) and content and isinstance(content[0], dict):
+            if "text" in content[0]:
+                return content[0]["text"].strip()
+    except Exception:
+        pass
+
+    # AI21-like: {"generations":[{"text":"..."}]}
+    gens = resp.get("generations")
+    if isinstance(gens, list) and gens and isinstance(gens[0], dict) and "text" in gens[0]:
+        return gens[0]["text"].strip()
+
+    # Cohere/others: sometimes "outputText" / "generation" / "answer"
+    for k in ("outputText", "generation", "answer"):
+        v = resp.get(k)
+        if isinstance(v, str):
+            return v.strip()
+
+    return ""
+
+# --- schemas you already have ---
 class IngestRequest(BaseModel):
     bucket: str
     prefix: Optional[str] = ""
@@ -56,39 +111,44 @@ def ingest(request: IngestRequest):
 
 @app.post("/chat", response_model=ChatResponse)
 def chat(request: ChatRequest):
-    """Match UI's expected /chat contract and return {response, sources, programs}."""
+    """Return a Bedrock-generated answer with Pinecone sources; fallback to RAG-only if Bedrock fails."""
     try:
-        # Retrieve context with our searcher
+        # 1) Retrieve top-k context from Pinecone via your searcher
         matches = searcher.search_vectors(request.message, limit=5)
         context = searcher.format_context(matches)
 
-        # Compose prompt
-        system_prompt = "You are a concise, helpful social worker assistant providing assistance to users who have lost their job in California at a 5th-grade reading level. Use empathetic language in your response."
+        # 2) Build the prompt
+        system_prompt = (
+            "You are a concise, helpful social worker assistant providing assistance to users who have lost their job in California at a 5th-grade reading level. Explain program basics, eligibility, steps, necessary documents, timelines; include county-variation note. Suggest other programs that may be relevant even if not directly asked given the context. Do not guarantee approval or benefit amounts. Do not generalize county-specific rules without stating they vary by county. Do not provide outdated income limits or timelines. Do not give legal/financial advice beyond program guidance. Do not fabricate citations or sources. Use empathetic language in your response. Today's date is {today}."
+        )
         user_prompt = f"Context:\n{context}\n\nQuestion: {request.message}\n\nAnswer:"
 
-        # Optional bearer token header placeholder (if used)
-        bearer = get_bedrock_bearer_token()
+        # 3) Call Bedrock (Converse path shown; adjust modelId from your config)
+        text = ""
+        try:
+            bedrock = get_bedrock()
+            br = bedrock.converse(
+                modelId=models["llm_model"],  # e.g., "anthropic.claude-3-5-sonnet-20241022-v2:0"
+                messages=[{"role": "user", "content": [{"text": user_prompt}]}],
+                # You can pass inferenceConfig if you want maxTokens/temperature/topP, etc.
+            )
+            text = _extract_text_from_bedrock(br)
+        except Exception as e:
+            # Log to server console for diagnosis; don't leak to client
+            print("[Bedrock error]", repr(e))
 
-        # Invoke Bedrock GPT-OSS
-        response = bedrock.converse(
-            modelId=models["llm_model"],
-            messages=[{"role": "user", "content": [{"text": user_prompt}]}],
-            inferenceConfig={"maxTokens": 600, "temperature": 0.5},
-            system=[{"text": system_prompt}],
-        )
+        # 4) If Bedrock returned nothing, fallback to your RAG-only wrapper
+        if not text:
+            fallback_answer, fallback_sources, programs = get_rag_response(request.message)
+            return ChatResponse(response=fallback_answer, sources=fallback_sources, programs=programs)
 
-        text = response["output"]["message"]["content"][0]["text"] if "output" in response else ""
-
-        # Convert sources to UI shape
-        srcs = []
+        # 5) Build sources (names from Pinecone metadata)
+        srcs: List[Dict[str, str]] = []
         for m in matches:
-            name = m.get("s3_key","")
-            srcs.append({"name": name or "S3 Document", "url": "", "date": ""})
+            name = m.get("s3_key", "") or "S3 Document"
+            srcs.append({"name": name, "url": "", "date": ""})
 
-        # Programs placeholder (integration point for BenefitsFlow specific outputs)
-        programs: List[str] = []
-
-        return ChatResponse(response=text, sources=srcs, programs=programs)
+        return ChatResponse(response=text, sources=srcs, programs=[])
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
