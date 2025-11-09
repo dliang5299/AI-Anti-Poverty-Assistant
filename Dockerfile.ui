@@ -1,31 +1,18 @@
+# Dockerfile for BenefitsFlow FastAPI Backend + HTML Frontend
 FROM python:3.11-slim
 
-ENV PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONUNBUFFERED=1 \
-    PIP_NO_CACHE_DIR=1
+WORKDIR /ui
 
-WORKDIR /app
+# Copy requirements and install dependencies
+# Using minimal requirements for FastAPI + HTML frontend
+COPY ui/requirements.txt /tmp/requirements.txt
+RUN pip install --no-cache-dir -r /tmp/requirements.txt || pip install --no-cache-dir fastapi uvicorn pydantic httpx requests
 
-# Copy source
-COPY UI/ /app/UI/
-COPY app/ /app/app/
-COPY requirements.txt /app/app/requirements.txt
-COPY UI/requirements.txt /app/UI/requirements.txt
+# Copy application code
+COPY ui /ui
 
-# Install dependencies:
-# 1) Base project requirements (if present)
-# 2) UI-specific requirements (if present)
-# 3) Ensure FastAPI/uvicorn/jinja2/requests/httpx exist for serving + RAG integration
-RUN --mount=type=cache,target=/root/.cache/pip \
-    (pip install -r /app/app/requirements.txt || true) && \
-    (test -f /app/UI/requirements.txt && pip install -r /app/UI/requirements.txt || true) && \
-    pip install fastapi uvicorn jinja2 requests httpx
-
-# Non-root runtime user (optional hardening)
-RUN useradd -m uiuser
-USER uiuser
-
+# Expose port 8501 for FastAPI (matches serve_frontend.py)
 EXPOSE 8501
 
-# Serve the FastAPI UI app
-CMD ["uvicorn", "UI.serve_frontend:app", "--host", "0.0.0.0", "--port", "8501"]
+# Run FastAPI with uvicorn (using serve_frontend which runs on port 8501)
+CMD ["uvicorn", "serve_frontend:app", "--host", "0.0.0.0", "--port", "8501"]

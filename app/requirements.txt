@@ -6,4 +6,3 @@ uvicorn>=0.24.0
 pydantic>=2.5.0
 openai>=1.30.0
 pinecone>=5.0.0
-streamlit>=1.33.0
