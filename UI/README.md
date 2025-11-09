@@ -1,78 +1,53 @@
 # BenefitsFlow Frontend
 
-Professional HTML frontend with FastAPI backend for California benefits navigation.
+HTML frontend with FastAPI backend for California benefits navigation. Integrated with RAG system.
 
 ## Quick Start
 
-### Option 1: Simple Startup (Recommended)
+### Local Development (Simplest)
 ```bash
 cd UI
 python start_app.py
 ```
-- Opens HTML frontend in browser
-- Starts FastAPI backend automatically
-- Uses demo responses for testing
+Opens browser at http://localhost:8000 with demo responses.
 
-### Option 2: Hosted Application
+### With Full RAG System (Docker)
 ```bash
-cd UI
-python serve_frontend.py
+# From project root - requires API keys (see API_KEYS_SETUP.md)
+docker-compose up --build
 ```
-- Serves frontend at http://localhost:8000
-- API available at http://localhost:8000/api
-- API docs at http://localhost:8000/api/docs
+- RAG service: http://localhost:8000
+- Frontend: http://localhost:8501
 
-## File Structure
+## Documentation
 
-### Core Files
-- `benefitsflow_frontend.html` - Main HTML frontend
-- `fastapi_backend.py` - FastAPI backend with API endpoints
-- `rag_backend.py` - Demo RAG responses (will be replaced by Deric's system)
-- `utils.py` - Utility functions
+- **`RUN_LOCALLY.md`** - How to run locally for development
+- **`API_KEYS_SETUP.md`** - Setting up API keys (current: OpenAI + Pinecone)
+- **`AWS_NATIVE_SETUP.md`** - Using 100% AWS services (Bedrock + OpenSearch) - Recommended if you have AWS budget
+- **`AWS_SECRETS_MANAGER_SETUP.md`** - Production deployment to EC2 with Secrets Manager
 
-### Startup Scripts
-- `start_app.py` - Simple startup script
-- `serve_frontend.py` - Hosted application server
+## Architecture
 
-### Resources
-- `images/` - Logo and UI images
-- `requirements.txt` - Python dependencies
+```
+Frontend (HTML) → FastAPI Backend → RAG Service
+                                      ↓
+                              Bedrock + Pinecone + OpenAI
+```
 
-### Documentation
-- `INTEGRATION_GUIDE_FOR_DERIC.md` - Guide for connecting Deric's RAG system
-- `README.md` - This file
+- **Frontend**: `benefitsflow_frontend.html` - HTML/CSS/JavaScript
+- **Backend**: `fastapi_backend.py` - FastAPI with API endpoints
+- **RAG Service**: `app/RAG_service.py` - Vector search + LLM (Deric's code)
 
 ## API Endpoints
 
-- `GET /` - Health check
-- `POST /chat` - Main chat endpoint
-- `POST /download/checklist` - Generate checklist
-- `POST /download/calendar` - Generate calendar
-- `GET /situations` - Available situation types
-- `GET /health` - Health check
-
-## Integration with RAG System
-
-The frontend is ready to connect to Deric's RAG system. See `INTEGRATION_GUIDE_FOR_DERIC.md` for details.
-
-## Dependencies
-
-- FastAPI
-- Uvicorn
-- Standard Python libraries
-
-## Development
-
-The application uses:
-- **Frontend**: HTML/CSS/JavaScript (no framework dependencies)
-- **Backend**: FastAPI with Python
-- **Architecture**: Clean separation between frontend and backend
+- `GET /` - Serve HTML frontend
+- `POST /api/chat` - Chat with RAG system
+- `POST /api/download/checklist` - Download checklist
+- `POST /api/download/calendar` - Download calendar (.ics)
+- `GET /api/health` - Health check
 
 ## Production Deployment
 
-Ready for deployment to:
-- AWS SageMaker
-- Docker containers
-- Cloud platforms
-
-The architecture is production-ready and scalable.
+- **`EC2_DEPLOYMENT_GUIDE.md`** - Complete step-by-step guide for two-instance EC2 deployment
+- **`AWS_SECRETS_MANAGER_SETUP.md`** - Using AWS Secrets Manager for API keys
+- **`AWS_NATIVE_SETUP.md`** - Using 100% AWS services (optional, if migrating from Pinecone)

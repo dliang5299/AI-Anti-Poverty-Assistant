@@ -16,10 +16,17 @@ import time
 from pathlib import Path
 from datetime import datetime, timedelta
 import io
+import httpx
 
-# Import your existing modules
+# Import your existing modules (fallback)
 from rag_backend import get_rag_response, generate_checklist
 from utils import extract_programs_from_conversation, get_quick_replies
+
+# Deric's RAG Service URL
+# In Docker: use service name "api" (from docker-compose.yml)
+# Locally: use "localhost"
+# On EC2: use private IP or service name
+RAG_SERVICE_URL = os.getenv("RAG_SERVICE_URL", "http://localhost:8000")
 
 # Activity tracking file (for EC2 auto-stop)
 ACTIVITY_FILE = Path("/tmp/benefitsflow-last-activity.txt")
@@ -96,22 +103,42 @@ async def api_root():
 async def chat_endpoint(request: ChatRequest):
     """
     Main chat endpoint - handles user messages and returns AI responses
-    This will connect to Deric's RAG system when ready
+    Calls Deric's RAG service, with fallback to demo if unavailable
     """
     try:
-        # For now, use demo responses
-        # TODO: Replace with Deric's RAG system when ready
-        response_text, sources, programs = get_rag_response(
-            request.message, 
-            request.conversation_history, 
-            {"situation": request.situation}
-        )
-        
-        return ChatResponse(
-            response=response_text,
-            sources=sources,
-            programs=programs
-        )
+        # Try to call Deric's RAG service first
+        try:
+            async with httpx.AsyncClient(timeout=30.0) as client:
+                response = await client.post(
+                    f"{RAG_SERVICE_URL}/chat",
+                    json={
+                        "message": request.message,
+                        "situation": request.situation,
+                        "conversation_history": request.conversation_history
+                    }
+                )
+                response.raise_for_status()
+                rag_result = response.json()
+                
+                return ChatResponse(
+                    response=rag_result["response"],
+                    sources=rag_result.get("sources", []),
+                    programs=rag_result.get("programs", [])
+                )
+        except (httpx.RequestError, httpx.HTTPStatusError) as e:
+            # Fallback to demo RAG if Deric's service is unavailable
+            print(f"Warning: RAG service unavailable ({RAG_SERVICE_URL}), using fallback: {str(e)}")
+            response_text, sources, programs = get_rag_response(
+                request.message, 
+                request.conversation_history, 
+                {"situation": request.situation}
+            )
+            
+            return ChatResponse(
+                response=response_text,
+                sources=sources,
+                programs=programs
+            )
         
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error processing chat: {str(e)}")

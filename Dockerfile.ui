@@ -15,11 +15,11 @@ COPY UI/requirements.txt /app/UI/requirements.txt
 # Install dependencies:
 # 1) Base project requirements (if present)
 # 2) UI-specific requirements (if present)
-# 3) Ensure FastAPI/uvicorn/jinja2/requests exist for serving + simple proxying
+# 3) Ensure FastAPI/uvicorn/jinja2/requests/httpx exist for serving + RAG integration
 RUN --mount=type=cache,target=/root/.cache/pip \
     (pip install -r /app/app/requirements.txt || true) && \
     (test -f /app/UI/requirements.txt && pip install -r /app/UI/requirements.txt || true) && \
-    pip install fastapi uvicorn jinja2 requests
+    pip install fastapi uvicorn jinja2 requests httpx
 
 # Non-root runtime user (optional hardening)
 RUN useradd -m uiuser
