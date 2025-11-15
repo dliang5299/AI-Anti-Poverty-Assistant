@@ -114,6 +114,11 @@ def call_chat(
     return 0, None, last_err
 
 def write_csv(results: List[QAResult]) -> None:
+    """Write a CSV where each row has a clean list of source URLs.
+
+    - source_urls: JSON list of URLs pulled from each source dict's
+      `source_url` key (or `url` as a fallback).
+    """
     with open(OUTPUT_FILE, "w", newline="", encoding="utf-8") as f:
         w = csv.DictWriter(
             f,
@@ -121,7 +126,7 @@ def write_csv(results: List[QAResult]) -> None:
                 "id",
                 "question",
                 "answer",
-                "sources_json",
+                "source_urls",
                 "programs_json",
                 "status",
                 "error",
@@ -131,11 +136,22 @@ def write_csv(results: List[QAResult]) -> None:
         )
         w.writeheader()
         for r in results:
+            # Extract just the URLs from each source dict
+            urls: List[str] = []
+            for s in (r.sources or []):
+                if not isinstance(s, dict):
+                    continue
+                # Prefer explicit "source_url" (from Pinecone metadata),
+                # fall back to "url" if that's what /chat returns.
+                u = s.get("source_url") or s.get("url")
+                if u:
+                    urls.append(u)
+
             row = {
                 "id": r.id,
                 "question": r.question,
                 "answer": r.answer or "",
-                "sources_json": json.dumps(r.sources or [], ensure_ascii=False),
+                "source_urls": json.dumps(urls, ensure_ascii=False),
                 "programs_json": json.dumps(r.programs or [], ensure_ascii=False),
                 "status": r.status,
                 "error": r.error or "",
