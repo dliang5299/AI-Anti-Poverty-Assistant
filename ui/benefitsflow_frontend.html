@@ -960,10 +960,128 @@
 
         // Format message text to handle markdown
         function formatMessageText(text) {
+            if (!text) return '';
+            
+            // First, convert markdown tables to HTML tables
+            text = convertMarkdownTables(text);
+            
             // Convert **text** to <strong>text</strong>
-            return text
-                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-                .replace(/\n/g, '<br>');
+            text = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+            
+            // Convert *text* to <em>text</em> (italics)
+            text = text.replace(/\*(.*?)\*/g, '<em>$1</em>');
+            
+            // Convert headers
+            text = text.replace(/^### (.*$)/gm, '<h3>$1</h3>');
+            text = text.replace(/^## (.*$)/gm, '<h2>$1</h2>');
+            text = text.replace(/^# (.*$)/gm, '<h1>$1</h1>');
+            
+            // Convert horizontal rules
+            text = text.replace(/^---$/gm, '<hr>');
+            
+            // Convert line breaks (but preserve tables)
+            text = text.replace(/\n/g, '<br>');
+            
+            return text;
+        }
+        
+        // Convert markdown tables to HTML tables
+        function convertMarkdownTables(text) {
+            // Split text into lines for processing
+            const lines = text.split('\n');
+            const result = [];
+            let i = 0;
+            
+            while (i < lines.length) {
+                const line = lines[i];
+                
+                // Check if this line looks like a table header (starts with |)
+                if (line.trim().startsWith('|') && line.includes('|')) {
+                    // Collect table lines
+                    const tableLines = [];
+                    let j = i;
+                    
+                    // Get header
+                    if (j < lines.length && lines[j].trim().startsWith('|')) {
+                        tableLines.push(lines[j]);
+                        j++;
+                    }
+                    
+                    // Get separator (optional)
+                    if (j < lines.length && lines[j].trim().match(/^\|[\s\-:|]+\|$/)) {
+                        tableLines.push(lines[j]);
+                        j++;
+                    }
+                    
+                    // Get data rows
+                    while (j < lines.length && lines[j].trim().startsWith('|')) {
+                        tableLines.push(lines[j]);
+                        j++;
+                    }
+                    
+                    // Convert to HTML if we have at least header + 1 row
+                    if (tableLines.length >= 2) {
+                        const htmlTable = convertTableLinesToHTML(tableLines);
+                        result.push(htmlTable);
+                        i = j;
+                        continue;
+                    }
+                }
+                
+                result.push(line);
+                i++;
+            }
+            
+            return result.join('\n');
+        }
+        
+        // Convert table lines to HTML
+        function convertTableLinesToHTML(tableLines) {
+            if (tableLines.length < 1) return '';
+            
+            // Parse header
+            const headerLine = tableLines[0];
+            const headers = headerLine.split('|').map(h => h.trim()).filter(h => h && h.length > 0);
+            
+            if (headers.length === 0) return '';
+            
+            // Parse rows (skip separator line if present)
+            const rows = [];
+            const startIdx = tableLines[1] && tableLines[1].trim().match(/^\|[\s\-:|]+\|$/) ? 2 : 1;
+            
+            for (let i = startIdx; i < tableLines.length; i++) {
+                const cells = tableLines[i].split('|').map(c => c.trim()).filter(c => c && c.length > 0);
+                if (cells.length > 0) {
+                    rows.push(cells);
+                }
+            }
+            
+            // Build HTML table
+            let html = '<table style="border-collapse: collapse; width: 100%; margin: 10px 0; font-size: 0.9em;">';
+            
+            // Header
+            html += '<thead><tr>';
+            headers.forEach(header => {
+                html += `<th style="border: 1px solid #ddd; padding: 8px; text-align: left; background-color: #f5f5f5; font-weight: 600;">${header}</th>`;
+            });
+            html += '</tr></thead>';
+            
+            // Body
+            if (rows.length > 0) {
+                html += '<tbody>';
+                rows.forEach(row => {
+                    html += '<tr>';
+                    headers.forEach((_, idx) => {
+                        const cell = idx < row.length ? row[idx] : '';
+                        html += `<td style="border: 1px solid #ddd; padding: 8px;">${cell}</td>`;
+                    });
+                    html += '</tr>';
+                });
+                html += '</tbody>';
+            }
+            
+            html += '</table>';
+            return html;
         }
 
         // Initialize

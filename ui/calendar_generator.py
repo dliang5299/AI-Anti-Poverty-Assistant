@@ -44,16 +44,19 @@ def _has_sufficient_context(conversation_history: List[Dict[str, Any]]) -> bool:
     """
     Check if conversation has enough context to generate meaningful calendar events.
     """
-    if not conversation_history or len(conversation_history) < 4:
+    if not conversation_history or len(conversation_history) < 2:
         return False
     
     meaningful_count = 0
+    total_length = 0
     for msg in conversation_history:
         content = msg.get('content', '')
-        if isinstance(content, str) and len(content.strip()) > 20:
+        if isinstance(content, str) and len(content.strip()) > 10:
             meaningful_count += 1
+            total_length += len(content.strip())
     
-    return meaningful_count >= 4
+    # Need at least 2 messages OR substantial content (more than 200 chars total)
+    return meaningful_count >= 2 or total_length > 200
 
 async def _get_rag_context_from_deric(query: str) -> tuple[str, List[Dict]]:
     """
