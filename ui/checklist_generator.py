@@ -81,6 +81,7 @@ async def _get_rag_context_from_deric(query: str) -> tuple[str, List[Dict]]:
     Returns (context_text, sources_list)
     """
     try:
+        print(f"DEBUG: Calling RAG service at {RAG_SERVICE_URL}/chat")
         async with httpx.AsyncClient(timeout=30.0) as client:
             # Call Deric's chat endpoint to get RAG context
             response = await client.post(
@@ -104,10 +105,13 @@ async def _get_rag_context_from_deric(query: str) -> tuple[str, List[Dict]]:
             # The response text contains the RAG-augmented answer, which includes context
             context_text = result.get("response", "")
             
+            print(f"DEBUG: RAG service returned - response length: {len(context_text)}, sources count: {len(sources)}")
             return context_text, sources
             
     except Exception as e:
-        print(f"Error getting RAG context from Deric's service: {e}")
+        print(f"DEBUG: Error getting RAG context from Deric's service: {e}")
+        import traceback
+        traceback.print_exc()
         return "", []
 
 def generate_checklist(
@@ -164,19 +168,31 @@ def generate_checklist(
         query = ' '.join(query_parts) if query_parts else conversation_text[:200]
         
         # Get RAG context from Deric's service
+        print(f"DEBUG: Getting RAG context with query: {query[:100]}...")
         try:
-            loop = asyncio.get_event_loop()
-        except RuntimeError:
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-        
-        context_text, sources = loop.run_until_complete(_get_rag_context_from_deric(query))
-        
-        print(f"DEBUG: RAG context retrieved - context length: {len(context_text)}, sources: {len(sources)}")
-        
-        if not context_text or len(sources) < 2:
-            # Not enough relevant context found
-            print(f"DEBUG: Not enough RAG context - context_text: {bool(context_text)}, sources: {len(sources)}")
+            # Handle async call properly - create new event loop if needed
+            try:
+                loop = asyncio.get_event_loop()
+                if loop.is_closed():
+                    loop = asyncio.new_event_loop()
+                    asyncio.set_event_loop(loop)
+            except RuntimeError:
+                loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(loop)
+            
+            print(f"DEBUG: Event loop created/retrieved, calling RAG service...")
+            context_text, sources = loop.run_until_complete(_get_rag_context_from_deric(query))
+            
+            print(f"DEBUG: RAG context retrieved - context length: {len(context_text)}, sources: {len(sources)}")
+            
+            if not context_text or len(sources) < 2:
+                # Not enough relevant context found
+                print(f"DEBUG: Not enough RAG context - context_text: {bool(context_text)}, sources: {len(sources)}")
+                return []
+        except Exception as e:
+            print(f"DEBUG: Error getting RAG context: {e}")
+            import traceback
+            traceback.print_exc()
             return []
         
         # Build prompt for Bedrock
