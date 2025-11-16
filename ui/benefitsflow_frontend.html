@@ -1116,9 +1116,25 @@
             
             let sourcesHTML = '';
             if (sources && sources.length > 0) {
-                sourcesHTML = sources.map(s => 
-                    `<span class="source-tag" onclick="window.open('${s.url}', '_blank')">${s.name} • ${s.date}</span>`
-                ).join(' ');
+                sourcesHTML = sources.map(s => {
+                    // Handle sources: if url is empty but name looks like a URL, use name as URL
+                    // Otherwise use the url field, or no link if neither is available
+                    let sourceUrl = s.url || '';
+                    let sourceName = s.name || 'Source';
+                    
+                    // If name looks like a URL and url is empty, use name as URL
+                    if (!sourceUrl && sourceName && (sourceName.startsWith('http://') || sourceName.startsWith('https://'))) {
+                        sourceUrl = sourceName;
+                        sourceName = new URL(sourceName).hostname; // Display just the domain
+                    }
+                    
+                    // If we have a URL, make it clickable; otherwise just show the name
+                    if (sourceUrl) {
+                        return `<span class="source-tag" onclick="window.open('${sourceUrl}', '_blank')">${sourceName}${s.date ? ' • ' + s.date : ''}</span>`;
+                    } else {
+                        return `<span class="source-tag">${sourceName}${s.date ? ' • ' + s.date : ''}</span>`;
+                    }
+                }).join(' ');
             }
 
             messageDiv.innerHTML = `

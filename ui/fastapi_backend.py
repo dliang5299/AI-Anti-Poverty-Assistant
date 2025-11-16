@@ -19,8 +19,12 @@ import io
 import httpx
 
 # Import your existing modules (fallback)
-from rag_backend import get_rag_response, generate_checklist
+from rag_backend import get_rag_response
 from utils import extract_programs_from_conversation, get_quick_replies
+
+# Import UI generators (all logic in UI folder)
+from checklist_generator import generate_checklist
+from calendar_generator import generate_calendar_events
 
 # Deric's RAG Service URL
 # In Docker: use service name "api" (from docker-compose.yml)
@@ -146,7 +150,7 @@ async def chat_endpoint(request: ChatRequest):
 @app.post("/api/download/checklist")
 async def download_checklist(request: DownloadRequest):
     """
-    Generate and download a personalized checklist as a text file
+    Generate and download a personalized checklist as a text file using RAG service
     """
     try:
         # Validate request
@@ -155,17 +159,15 @@ async def download_checklist(request: DownloadRequest):
         if not isinstance(request.programs, list):
             request.programs = []
         
-        # Validate input and extract programs from conversation
+        # Extract programs from conversation
         all_programs = set()
         if request.programs:
             all_programs.update(request.programs)
         
-        # Extract programs from conversation history (from assistant messages with programs field)
         for msg in request.conversation_history:
             if msg.get('role') == 'assistant' and msg.get('programs'):
                 if isinstance(msg['programs'], list):
                     all_programs.update(msg['programs'])
-            # Also check if programs are mentioned in content
             content = msg.get('content', '').lower()
             program_keywords = {
                 'calfresh': 'CalFresh',
@@ -179,32 +181,41 @@ async def download_checklist(request: DownloadRequest):
                 if keyword in content:
                     all_programs.add(program)
         
-        if not request.conversation_history and not request.situation:
-            # Generate a generic checklist if no conversation
-            conversation_history = []
-            user_context = {"programs": list(all_programs)}
-        else:
-            conversation_history = request.conversation_history
+        # Generate checklist using UI generator (uses Deric's RAG service internally)
+        checklist_items = []
+        try:
             user_context = {
                 "situation": request.situation,
                 "programs": list(all_programs)
-            } if request.situation else {"programs": list(all_programs)}
-        
-        # Generate checklist using your existing logic with programs
-        try:
-            print(f"Generating checklist with {len(conversation_history)} messages and programs: {list(all_programs)}")
-            checklist_items = generate_checklist(conversation_history, user_context)
-            print(f"Generated {len(checklist_items)} checklist items")
-        except Exception as gen_error:
-            import traceback
-            print(f"Error in generate_checklist: {str(gen_error)}")
-            print(traceback.format_exc())
-            # Fallback to generic checklist
-            checklist_items = generate_checklist([], {})
+            }
+            checklist_items = generate_checklist(request.conversation_history, user_context)
+        except Exception as e:
+            print(f"Error generating checklist: {e}")
+            checklist_items = []
         
         if not checklist_items or len(checklist_items) == 0:
-            print("Checklist items empty, generating fallback")
-            checklist_items = generate_checklist([], {})
+            # Return fallback message if no items generated
+            content = f"""BenefitsFlow Personalized Checklist
+Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+{'=' * 60}
+
+Not enough conversation context to generate a personalized checklist.
+
+Please continue your conversation with the assistant to provide more details about:
+• Your specific situation
+• Programs you're interested in
+• Deadlines or important dates
+• Documents you need to gather
+
+Then try downloading your checklist again.
+"""
+            return Response(
+                content=content.encode('utf-8'),
+                media_type='text/plain',
+                headers={
+                    "Content-Disposition": f"attachment; filename=benefits-checklist-{datetime.now().strftime('%Y%m%d')}.txt"
+                }
+            )
         
         # Format checklist items into readable text
         checklist_text = []
@@ -294,15 +305,14 @@ For questions or assistance, visit: https://benefitscal.com
 @app.post("/api/download/calendar")
 async def download_calendar(request: DownloadRequest):
     """
-    Generate and download a calendar file (.ics) based on actual conversation programs
+    Generate and download a calendar file (.ics) using RAG service
     """
     try:
-        # Extract programs from conversation (same logic as checklist)
+        # Extract programs from conversation
         all_programs = set()
         if request.programs:
             all_programs.update(request.programs)
         
-        # Extract programs from conversation history
         for msg in request.conversation_history:
             if msg.get('role') == 'assistant' and msg.get('programs'):
                 if isinstance(msg['programs'], list):
@@ -320,69 +330,54 @@ async def download_calendar(request: DownloadRequest):
                 if keyword in content:
                     all_programs.add(program)
         
-        # Generate calendar events based on ACTUAL programs mentioned
-        base_date = datetime.now() + timedelta(days=1)
-        events = []
-        
-        event_num = 1
-        programs_list = list(all_programs)
-        
-        # If no programs, create generic events
-        if not programs_list:
-            programs_list = ['CalFresh', 'Medi-Cal', 'Unemployment Insurance']
-        
-        calendar_events = {
-            'CalFresh': {
-                'summary': 'Apply for CalFresh',
-                'description': 'Apply for CalFresh food assistance program',
-                'url': 'https://benefitscal.com',
-                'days_offset': 1
-            },
-            'Medi-Cal': {
-                'summary': 'Apply for Medi-Cal',
-                'description': 'Apply for Medi-Cal health insurance',
-                'url': 'https://benefitscal.com',
-                'days_offset': 3
-            },
-            'Unemployment Insurance': {
-                'summary': 'Apply for Unemployment Insurance',
-                'description': 'File your unemployment insurance claim',
-                'url': 'https://edd.ca.gov',
-                'days_offset': 0
-            },
-            'CalWORKs': {
-                'summary': 'Apply for CalWORKs',
-                'description': 'Apply for CalWORKs cash assistance',
-                'url': 'https://benefitscal.com',
-                'days_offset': 2
-            },
-            'Section 8': {
-                'summary': 'Contact Housing Authority',
-                'description': 'Apply for Section 8 housing assistance',
-                'url': 'https://211california.org',
-                'days_offset': 2
+        # Generate calendar events using UI generator (uses Deric's RAG service internally)
+        events_data = []
+        try:
+            user_context = {
+                "situation": request.situation,
+                "programs": list(all_programs)
             }
-        }
+            events_data = generate_calendar_events(request.conversation_history, user_context)
+        except Exception as e:
+            print(f"Error generating calendar events: {e}")
+            events_data = []
         
-        days_offset = 0
-        for program in programs_list[:5]:  # Limit to 5 events
-            if program in calendar_events:
-                event_info = calendar_events[program]
-                event_date = base_date + timedelta(days=days_offset)
-                
-                events.append(f"""BEGIN:VEVENT
+        # Convert events to iCalendar format
+        events = []
+        event_num = 1
+        
+        if not events_data:
+            # Not enough context - create a single informational event
+            base_date = datetime.now() + timedelta(days=1)
+            events.append(f"""BEGIN:VEVENT
+UID:benefitsflow-context-needed@benefitsflow.com
+DTSTAMP:{datetime.now().strftime('%Y%m%dT%H%M%SZ')}
+DTSTART:{base_date.strftime('%Y%m%dT090000Z')}
+DTEND:{base_date.strftime('%Y%m%dT100000Z')}
+SUMMARY:Continue Conversation for Personalized Calendar
+DESCRIPTION:Not enough context from our conversation to generate personalized calendar events. Please continue chatting with the assistant about your specific situation, programs you're interested in, and any deadlines or important dates. Then try downloading your calendar again.
+LOCATION:BenefitsFlow Chat
+STATUS:CONFIRMED
+END:VEVENT""")
+        else:
+            # Use RAG-generated events
+            for event in events_data:
+                try:
+                    event_date = datetime.strptime(event['start_date'], "%Y-%m-%d")
+                    events.append(f"""BEGIN:VEVENT
 UID:benefitsflow-{event_num}@benefitsflow.com
 DTSTAMP:{datetime.now().strftime('%Y%m%dT%H%M%SZ')}
 DTSTART:{event_date.strftime('%Y%m%dT090000Z')}
 DTEND:{event_date.strftime('%Y%m%dT100000Z')}
-SUMMARY:{event_info['summary']}
-DESCRIPTION:{event_info['description']}
+SUMMARY:{event.get('summary', 'Important Date')}
+DESCRIPTION:{event.get('description', '')}
 LOCATION:Online Application
-URL:{event_info['url']}
+URL:{event.get('url', '')}
 END:VEVENT""")
-                
-                event_num += 1
-                days_offset += 3  # Space events 3 days apart
+                    event_num += 1
+                except Exception as e:
+                    print(f"Error formatting calendar event: {e}")
+                    continue
         
         ics_content = f"""BEGIN:VCALENDAR
 VERSION:2.0
