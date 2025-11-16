@@ -11,6 +11,8 @@ import json
 from datetime import datetime
 from functools import lru_cache
 import os
+import asyncio
+from concurrent.futures import ThreadPoolExecutor
 
 # Deric's RAG Service URL
 # Check both RAG_SERVICE_URL and RAG_API_URL for compatibility
@@ -137,11 +139,13 @@ def generate_checklist(
         return []
     
     try:
+        print("DEBUG: Starting checklist generation...")
         # Extract key information from conversation
         conversation_text = "\n".join([
             f"{msg.get('role', 'user')}: {msg.get('content', '')}"
             for msg in conversation_history[-10:]  # Last 10 messages
         ])
+        print(f"DEBUG: Conversation text extracted, length: {len(conversation_text)}")
         
         # Extract key phrases from conversation for better RAG search
         query_parts = []
@@ -152,6 +156,7 @@ def generate_checklist(
             for msg in conversation_history 
             if msg.get('role') == 'user' and len(msg.get('content', '')) > 10
         ]
+        print(f"DEBUG: Found {len(user_messages)} user messages")
         if user_messages:
             # Use the most recent user message as primary query
             query_parts.append(user_messages[-1])
@@ -159,6 +164,7 @@ def generate_checklist(
         # Add program names if mentioned
         if user_context.get('programs'):
             query_parts.extend(user_context['programs'])
+            print(f"DEBUG: Added programs to query: {user_context['programs']}")
         
         # Add situation if provided
         if user_context.get('situation') and user_context['situation'] != 'General':
@@ -166,22 +172,28 @@ def generate_checklist(
         
         # Combine into query
         query = ' '.join(query_parts) if query_parts else conversation_text[:200]
+        print(f"DEBUG: Query built: {query[:100]}...")
         
         # Get RAG context from Deric's service
         print(f"DEBUG: Getting RAG context with query: {query[:100]}...")
         try:
-            # Handle async call properly - create new event loop if needed
-            try:
-                loop = asyncio.get_event_loop()
-                if loop.is_closed():
-                    loop = asyncio.new_event_loop()
-                    asyncio.set_event_loop(loop)
-            except RuntimeError:
-                loop = asyncio.new_event_loop()
-                asyncio.set_event_loop(loop)
+            # Use thread pool to run async function (avoids "event loop already running" error)
+            # FastAPI runs in an async context, so we need to run the async function in a separate thread
+            def run_in_thread(coro):
+                def run_in_new_loop():
+                    new_loop = asyncio.new_event_loop()
+                    asyncio.set_event_loop(new_loop)
+                    try:
+                        return new_loop.run_until_complete(coro)
+                    finally:
+                        new_loop.close()
+                
+                with ThreadPoolExecutor() as executor:
+                    future = executor.submit(run_in_new_loop)
+                    return future.result()
             
-            print(f"DEBUG: Event loop created/retrieved, calling RAG service...")
-            context_text, sources = loop.run_until_complete(_get_rag_context_from_deric(query))
+            print(f"DEBUG: Calling RAG service...")
+            context_text, sources = run_in_thread(_get_rag_context_from_deric(query))
             
             print(f"DEBUG: RAG context retrieved - context length: {len(context_text)}, sources: {len(sources)}")
             
@@ -286,7 +298,9 @@ Return ONLY valid JSON array, no other text."""
             return []
             
     except Exception as e:
-        print(f"Error generating checklist: {e}")
+        print(f"DEBUG: Exception in generate_checklist: {e}")
+        import traceback
+        traceback.print_exc()
         return []
 
 

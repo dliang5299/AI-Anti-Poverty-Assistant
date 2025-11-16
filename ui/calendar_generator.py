@@ -11,6 +11,8 @@ import json
 from datetime import datetime, timedelta
 from functools import lru_cache
 import os
+import asyncio
+import concurrent.futures
 
 # Deric's RAG Service URL
 # Check both RAG_SERVICE_URL and RAG_API_URL for compatibility
@@ -151,14 +153,29 @@ def generate_calendar_events(
         
         # Get RAG context from Deric's service
         try:
-            loop = asyncio.get_event_loop()
-        except RuntimeError:
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
+            # Use thread pool to run async function (avoids "event loop already running" error)
+            # FastAPI runs in an async context, so we need to run the async function in a separate thread
+            def run_in_thread(coro):
+                def run_in_new_loop():
+                    new_loop = asyncio.new_event_loop()
+                    asyncio.set_event_loop(new_loop)
+                    try:
+                        return new_loop.run_until_complete(coro)
+                    finally:
+                        new_loop.close()
+                
+                with concurrent.futures.ThreadPoolExecutor() as executor:
+                    future = executor.submit(run_in_new_loop)
+                    return future.result()
+            
+            context_text, sources = run_in_thread(_get_rag_context_from_deric(query))
         
-        context_text, sources = loop.run_until_complete(_get_rag_context_from_deric(query))
-        
-        if not context_text or len(sources) < 2:
+            if not context_text or len(sources) < 2:
+                return []
+        except Exception as e:
+            print(f"DEBUG: Error getting RAG context for calendar: {e}")
+            import traceback
+            traceback.print_exc()
             return []
         
         # Build prompt for Bedrock
