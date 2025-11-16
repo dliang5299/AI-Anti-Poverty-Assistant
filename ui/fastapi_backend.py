@@ -30,7 +30,8 @@ from calendar_generator import generate_calendar_events
 # In Docker: use service name "api" (from docker-compose.yml)
 # Locally: use "localhost"
 # On EC2: use private IP or service name
-RAG_SERVICE_URL = os.getenv("RAG_SERVICE_URL", "http://localhost:8000")
+# Check both RAG_SERVICE_URL and RAG_API_URL for compatibility
+RAG_SERVICE_URL = os.getenv("RAG_SERVICE_URL") or os.getenv("RAG_API_URL") or "http://localhost:8000"
 
 # Activity tracking file (for EC2 auto-stop)
 ACTIVITY_FILE = Path("/tmp/benefitsflow-last-activity.txt")
@@ -98,12 +99,12 @@ async def root():
             return HTMLResponse(content=f.read())
     return HTMLResponse(content="<h1>BenefitsFlow</h1><p>Frontend file not found</p>")
 
-@app.get("/api")
+@app.get("/")
 async def api_root():
     """API root endpoint"""
     return {"message": "BenefitsFlow API is running!", "status": "healthy"}
 
-@app.post("/api/chat", response_model=ChatResponse)
+@app.post("/chat", response_model=ChatResponse)
 async def chat_endpoint(request: ChatRequest):
     """
     Main chat endpoint - handles user messages and returns AI responses
@@ -147,7 +148,7 @@ async def chat_endpoint(request: ChatRequest):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error processing chat: {str(e)}")
 
-@app.post("/api/download/checklist")
+@app.post("/download/checklist")
 async def download_checklist(request: DownloadRequest):
     """
     Generate and download a personalized checklist as a text file using RAG service
@@ -302,7 +303,7 @@ For questions or assistance, visit: https://benefitscal.com
         print(f"Checklist download error: {error_detail}")
         raise HTTPException(status_code=500, detail=f"Error generating checklist: {str(e)}")
 
-@app.post("/api/download/calendar")
+@app.post("/download/calendar")
 async def download_calendar(request: DownloadRequest):
     """
     Generate and download a calendar file (.ics) using RAG service
@@ -405,7 +406,7 @@ END:VCALENDAR"""
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error generating calendar: {str(e)}")
 
-@app.get("/api/situations")
+@app.get("/situations")
 async def get_situations():
     """
     Get available situation types
@@ -421,7 +422,7 @@ async def get_situations():
         ]
     }
 
-@app.get("/api/health")
+@app.get("/health")
 async def health_check():
     """
     Health check endpoint

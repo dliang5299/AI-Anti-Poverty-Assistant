@@ -946,7 +946,11 @@
 
     <script>
         // Configuration
+        // API base URL - works for both local and deployed
         const API_BASE_URL = window.location.origin + '/api';
+        
+        // Debug: log API URL
+        console.log('API Base URL:', API_BASE_URL);
         
         // State management
         let messages = [];

@@ -35,13 +35,24 @@ app.add_middleware(
 # Mount the backend API at /api
 app.mount("/api", backend_app)
 
-# Serve static files (images, CSS, etc.)
-app.mount("/static", StaticFiles(directory="."), name="static")
+# Get the directory where this file is located
+ui_dir = Path(__file__).parent
+
+# Serve static files (images, CSS, etc.) - mount images directory
+images_dir = ui_dir / "images"
+if images_dir.exists():
+    app.mount("/images", StaticFiles(directory=str(images_dir)), name="images")
+    print(f"✅ Images mounted at /images from {images_dir}")
+else:
+    print(f"⚠️ Images directory not found at {images_dir}")
 
 @app.get("/")
 async def serve_frontend():
     """Serve the main HTML frontend"""
-    return FileResponse("benefitsflow_frontend.html")
+    html_file = ui_dir / "benefitsflow_frontend.html"
+    if html_file.exists():
+        return FileResponse(str(html_file))
+    return {"error": "Frontend file not found"}
 
 @app.get("/health")
 async def health_check():

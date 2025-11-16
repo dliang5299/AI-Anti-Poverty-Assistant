@@ -13,7 +13,8 @@ from functools import lru_cache
 import os
 
 # Deric's RAG Service URL
-RAG_SERVICE_URL = os.getenv("RAG_SERVICE_URL", "http://localhost:8000")
+# Check both RAG_SERVICE_URL and RAG_API_URL for compatibility
+RAG_SERVICE_URL = os.getenv("RAG_SERVICE_URL") or os.getenv("RAG_API_URL") or "http://localhost:8000"
 
 # AWS Configuration
 BEDROCK_REGION = os.getenv("BEDROCK_REGION", "us-west-2")
