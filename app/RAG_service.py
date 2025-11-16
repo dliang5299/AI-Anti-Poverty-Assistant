@@ -163,14 +163,35 @@ def chat(request: ChatRequest):
         if not text:
             fallback_answer, fallback_sources, programs = get_rag_response(request.message)
             return ChatResponse(response=fallback_answer, sources=fallback_sources, programs=programs)
-
-        # 5) Build sources (names from Pinecone metadata)
+    
+        # 5) Build sources (names + URLs from Pinecone metadata)
         srcs: List[Dict[str, str]] = []
         for m in matches:
-            name = m.get("s3_key", "") or "S3 Document"
-            srcs.append({"name": name, "url": "", "date": ""})
+            name = (
+                m.get("heading")
+                or m.get("doc_id")
+                or m.get("s3_key")
+                or "RAG chunk"
+            )
+            url = m.get("source_url") or ""
+            date = m.get("captured_at") or ""
+
+            srcs.append(
+                {
+                    "name": name,
+                    "url": url,
+                    "date": date,
+                    # explicit source_url so tests can rely on it
+                    "source_url": url,
+                    "chunk_id": str(m.get("chunk_id") or ""),
+                    "doc_id": str(m.get("doc_id") or ""),
+                    "section_id": str(m.get("section_id") or ""),
+                    "score": str(m.get("score", "")),
+                }
+            )
 
         return ChatResponse(response=text, sources=srcs, programs=[])
+
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

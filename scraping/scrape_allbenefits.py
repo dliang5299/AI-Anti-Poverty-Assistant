@@ -56,17 +56,6 @@ class DocRecord(BaseModel):
     # sections for RAG grounding
     sections: List[Section] = []
 
-class ChunkRecord(BaseModel):
-    chunk_id: str
-    doc_id: str
-    section_id: str
-    heading: str
-    source_url: str
-    captured_at: str
-    text: str
-    char_count: int
-    approx_tokens: int
-
 # ---------- Utilities ----------
 def now_iso():
     return datetime.datetime.now(tz=NY_TZ).isoformat()
@@ -91,55 +80,6 @@ def clean_list(items: List[str]) -> List[str]:
 def contains_kw(text: str, kws: tuple) -> bool:
     t = (text or "").lower()
     return any(kw in t for kw in kws)
-
-def estimate_tokens(text: str) -> int:
-    # crude but stable: ~4 chars per token
-    return max(1, int(len(text) / 4))
-
-def split_markdown_into_chunks(md: str, target_chars: int = 4000, overlap_chars: int = 600) -> List[str]:
-    """
-    Chunk markdown by paragraphs/lists to ~target_chars, with overlap.
-    Keeps list items intact; avoids cutting mid-paragraph when possible.
-    """
-    if not md:
-        return []
-    paras = [p for p in re.split(r"\n\s*\n", md.strip()) if p.strip()]
-    chunks = []
-    cur = []
-    cur_len = 0
-    for p in paras:
-        p_block = p.strip()
-        # if a single paragraph is huge, hard-split by lines
-        if len(p_block) > target_chars * 1.25:
-            lines = p_block.splitlines()
-            buf, blen = [], 0
-            for ln in lines:
-                if blen + len(ln) + 1 > target_chars and buf:
-                    chunks.append("\n".join(buf).strip())
-                    # overlap from end of buf
-                    overlap_text = "\n".join(buf)[-overlap_chars:]
-                    buf, blen = ([overlap_text], len(overlap_text))
-                buf.append(ln)
-                blen += len(ln) + 1
-            if buf:
-                chunks.append("\n".join(buf).strip())
-            continue
-
-        if cur_len + len(p_block) + 2 <= target_chars:
-            cur.append(p_block)
-            cur_len += len(p_block) + 2
-        else:
-            if cur:
-                chunks.append("\n\n".join(cur).strip())
-                # add overlap: take the last 'overlap_chars' of the chunk
-                last = chunks[-1]
-                overlap = last[-overlap_chars:] if len(last) > overlap_chars else last
-                cur, cur_len = ([overlap], len(overlap))
-            cur.append(p_block)
-            cur_len += len(p_block) + 2
-    if cur:
-        chunks.append("\n\n".join(cur).strip())
-    return [c for c in chunks if c.strip()]
 
 # ---------- Browser helpers ----------
 async def maybe_click_banners(page):
@@ -401,8 +341,6 @@ async def main():
     ap.add_argument("--skip-pdf-seeds", action="store_true", help="Ignore PDF seeds (do not parse PDFs)")
 
     # Chunking knobs (tune if you like)
-    ap.add_argument("--chunk-target-chars", type=int, default=4000, help="Approx chars per chunk (~1000 tokens)")
-    ap.add_argument("--chunk-overlap-chars", type=int, default=600, help="Overlap chars between consecutive chunks")
 
     args = ap.parse_args()
 
@@ -411,7 +349,6 @@ async def main():
     if out_base.suffix.lower() in (".jsonl", ".json", ".csv"):
         out_base = out_base.with_suffix("")
     docs_path   = out_base.with_suffix(".docs.jsonl")
-    chunks_path = out_base.with_suffix(".chunks.jsonl")
     csv_path    = out_base.with_suffix(".csv")
 
     # Build seeds
@@ -450,7 +387,6 @@ async def main():
 
         # writers
         docs_f   = open(docs_path, "w", encoding="utf-8")
-        chunks_f = open(chunks_path, "w", encoding="utf-8")
 
         # CSV accumulator
         csv_rows: List[Dict[str, str]] = []
@@ -467,31 +403,6 @@ async def main():
 
                 # Write DOC row
                 docs_f.write(json.dumps(doc.model_dump(), ensure_ascii=False) + "\n")
-
-                # Make CHUNKS (per section)
-                for sec in doc.sections:
-                    md = sec.markdown or ""
-                    # Remove heading line from chunk body (keep heading in metadata)
-                    body_md = re.sub(r"^##[^\n]+\n*", "", md).strip()
-                    # If empty, use original
-                    if not body_md: body_md = md
-                    pieces = split_markdown_into_chunks(body_md,
-                                                       target_chars=args.chunk_target_chars,
-                                                       overlap_chars=args.chunk_overlap_chars)
-                    for idx, piece in enumerate(pieces, 1):
-                        chunk_id = f"{doc.doc_id}:{sec.section_id}:{idx:03d}"
-                        rec = ChunkRecord(
-                            chunk_id=chunk_id,
-                            doc_id=doc.doc_id,
-                            section_id=sec.section_id,
-                            heading=sec.heading,
-                            source_url=doc.source_url,
-                            captured_at=doc.captured_at,
-                            text=piece,
-                            char_count=len(piece),
-                            approx_tokens=estimate_tokens(piece),
-                        )
-                        chunks_f.write(json.dumps(rec.model_dump(), ensure_ascii=False) + "\n")
 
                 # CSV preview row
                 csv_rows.append({
@@ -515,7 +426,7 @@ async def main():
             except Exception as e:
                 print(f"[{i}] ERROR {url}: {e}")
 
-        docs_f.close(); chunks_f.close()
+        docs_f.close()
 
         # Write CSV
         if csv_rows:
@@ -530,7 +441,7 @@ async def main():
 
         await browser.close()
 
-        print(f"\nWrote:\n  - {docs_path}\n  - {chunks_path}\n  - {csv_path}\nProcessed {processed} pages.")
+        print(f"\nWrote:\n  - {docs_path}\n  - {csv_path}\nProcessed {processed} pages.")
 
 if __name__ == "__main__":
     asyncio.run(main())
