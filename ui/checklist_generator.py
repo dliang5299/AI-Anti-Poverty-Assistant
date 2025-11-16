@@ -45,20 +45,35 @@ def _has_sufficient_context(conversation_history: List[Dict[str, Any]]) -> bool:
     Check if conversation has enough context to generate a meaningful checklist.
     Returns True if conversation has at least 1-2 meaningful exchanges.
     """
-    if not conversation_history or len(conversation_history) < 2:
+    if not conversation_history:
+        print("DEBUG: No conversation history provided")
         return False
+    
+    print(f"DEBUG: Checking context - history length: {len(conversation_history)}")
     
     # Count meaningful messages (user questions + assistant responses)
     meaningful_count = 0
     total_length = 0
-    for msg in conversation_history:
-        content = msg.get('content', '')
+    for i, msg in enumerate(conversation_history):
+        content = msg.get('content', '') or msg.get('message', '')
         if isinstance(content, str) and len(content.strip()) > 10:
             meaningful_count += 1
             total_length += len(content.strip())
+            print(f"DEBUG: Message {i}: role={msg.get('role')}, length={len(content.strip())}")
+    
+    print(f"DEBUG: Context check - meaningful_count={meaningful_count}, total_length={total_length}")
     
     # Need at least 2 messages OR substantial content (more than 200 chars total)
-    return meaningful_count >= 2 or total_length > 200
+    # OR if we have at least 1 user message with substantial content
+    has_user_message = any(
+        (msg.get('role') == 'user' or msg.get('role') == 'assistant') and 
+        len(str(msg.get('content', '') or msg.get('message', '')).strip()) > 50
+        for msg in conversation_history
+    )
+    
+    result = meaningful_count >= 2 or total_length > 200 or (has_user_message and total_length > 100)
+    print(f"DEBUG: Context sufficient: {result}")
+    return result
 
 async def _get_rag_context_from_deric(query: str) -> tuple[str, List[Dict]]:
     """
