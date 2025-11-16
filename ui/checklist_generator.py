@@ -114,6 +114,7 @@ def generate_checklist(
     
     # Check if conversation has enough context
     if not _has_sufficient_context(conversation_history):
+        print(f"DEBUG: Insufficient context - history length: {len(conversation_history)}")
         return []
     
     try:
@@ -156,8 +157,11 @@ def generate_checklist(
         
         context_text, sources = loop.run_until_complete(_get_rag_context_from_deric(query))
         
+        print(f"DEBUG: RAG context retrieved - context length: {len(context_text)}, sources: {len(sources)}")
+        
         if not context_text or len(sources) < 2:
             # Not enough relevant context found
+            print(f"DEBUG: Not enough RAG context - context_text: {bool(context_text)}, sources: {len(sources)}")
             return []
         
         # Build prompt for Bedrock
@@ -195,17 +199,24 @@ Generate a JSON array of checklist items. Each item should be a JSON object with
 Return ONLY valid JSON array, no other text."""
         
         # Call Bedrock
-        bedrock = get_bedrock()
-        response = bedrock.converse(
-            modelId=LLM_MODEL,
-            messages=[{"role": "user", "content": [{"text": user_prompt}]}],
-            system=[{"text": system_prompt}],
-            inferenceConfig={"maxTokens": 2000, "temperature": 0.3}
-        )
-        
-        text = _extract_text_from_bedrock(response)
-        
-        if not text:
+        try:
+            bedrock = get_bedrock()
+            print(f"DEBUG: Calling Bedrock with model: {LLM_MODEL}")
+            response = bedrock.converse(
+                modelId=LLM_MODEL,
+                messages=[{"role": "user", "content": [{"text": user_prompt}]}],
+                system=[{"text": system_prompt}],
+                inferenceConfig={"maxTokens": 2000, "temperature": 0.3}
+            )
+            
+            text = _extract_text_from_bedrock(response)
+            print(f"DEBUG: Bedrock response length: {len(text) if text else 0}")
+            
+            if not text:
+                print("DEBUG: Bedrock returned empty text")
+                return []
+        except Exception as e:
+            print(f"DEBUG: Bedrock error: {e}")
             return []
         
         # Parse JSON response

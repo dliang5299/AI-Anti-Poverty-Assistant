@@ -185,13 +185,19 @@ async def download_checklist(request: DownloadRequest):
         # Generate checklist using UI generator (uses Deric's RAG service internally)
         checklist_items = []
         try:
+            print(f"DEBUG: Generating checklist - conversation history length: {len(request.conversation_history)}")
+            print(f"DEBUG: Programs extracted: {list(all_programs)}")
+            
             user_context = {
                 "situation": request.situation,
                 "programs": list(all_programs)
             }
             checklist_items = generate_checklist(request.conversation_history, user_context)
+            print(f"DEBUG: Checklist items generated: {len(checklist_items)}")
         except Exception as e:
             print(f"Error generating checklist: {e}")
+            import traceback
+            traceback.print_exc()
             checklist_items = []
         
         if not checklist_items or len(checklist_items) == 0:

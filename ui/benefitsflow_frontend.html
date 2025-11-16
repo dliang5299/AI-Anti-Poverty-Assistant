@@ -962,14 +962,18 @@
         function formatMessageText(text) {
             if (!text) return '';
             
+            // Clean up inline citation markers from RAG output (temporary UI fix - Deric should fix in RAG)
+            // Remove patterns like 【2†L1-L9】, 【Source 5†L0-L2】, etc.
+            text = text.replace(/【[^】]+】/g, '');
+            
             // First, convert markdown tables to HTML tables
             text = convertMarkdownTables(text);
             
             // Convert **text** to <strong>text</strong>
             text = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
             
-            // Convert *text* to <em>text</em> (italics)
-            text = text.replace(/\*(.*?)\*/g, '<em>$1</em>');
+            // Convert *text* to <em>text</em> (italics) - but not if it's part of **bold**
+            text = text.replace(/(?<!\*)\*([^*]+?)\*(?!\*)/g, '<em>$1</em>');
             
             // Convert headers
             text = text.replace(/^### (.*$)/gm, '<h3>$1</h3>');
