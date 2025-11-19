@@ -1,6 +1,7 @@
 import boto3
 import pandas as pd
 from datetime import datetime
+from tests.evaluation import evaluate_response
 
 REGION = "us-west-2"
 
@@ -28,6 +29,7 @@ df_input = pd.read_csv("tests/gold_dataset.csv")
 prompts_df = df_input.drop_duplicates(subset=["user_question"], keep="first")
 user_prompts = prompts_df["user_question"].dropna().tolist()
 id_map = dict(zip(prompts_df["user_question"], prompts_df["id"]))
+gold_by_id = df_input.set_index("id")
 
 # Create Bedrock client once
 client = boto3.client("bedrock-runtime", region_name=REGION)
@@ -58,13 +60,34 @@ for MODEL_ID in MODELS:
         )
 
         # Append a row to the results list
-        results.append({
+        row_id = id_map.get(user_prompt)
+        gold_context = ""
+        gold_response = ""
+        if row_id is not None and row_id in gold_by_id.index:
+            gold_row = gold_by_id.loc[row_id]
+            # gold_row is a pandas Series
+            gold_context = str(gold_row.get("gold_context", ""))
+            gold_response = str(gold_row.get("gold_response", ""))
+
+        # Evaluate this response using our shared evaluation helper
+        eval_metrics = evaluate_response(
+            user_prompt=user_prompt,
+            model_answer=model_answer,
+            gold_context=gold_context,
+            gold_response=gold_response,
+        )
+
+        row = {
             "model_num": model_num,
             "model_id": MODEL_ID,
             "user_prompt": user_prompt,
-            "id": id_map.get(user_prompt),
-                        "model_answer": model_answer
-        })
+            "id": row_id,
+            "model_answer": model_answer,
+        }
+        if isinstance(eval_metrics, dict):
+            row.update(eval_metrics)
+
+        results.append(row)
 
     model_num += 1
 
