@@ -11,6 +11,8 @@ from botocore.exceptions import ProfileNotFound
 from app.RAG_ingest import RAGIngestor
 from app.RAG_search import RAGSearcher, get_rag_response
 from app.config import get_regions, get_models, get_bedrock_bearer_token
+from app.generators.checklist_generator import generate_checklist
+from app.generators.calendar_generator import generate_calendar_events
 
 regions = get_regions()
 models = get_models()
@@ -96,6 +98,26 @@ class ChatResponse(BaseModel):
     sources: List[Dict[str, str]] = []
     programs: List[str] = []
 
+class ChecklistRequest(BaseModel):
+    situation: Optional[str] = None
+    conversation_history: List[Dict[str, Any]] = []
+    programs: List[str] = []
+
+class ChecklistResponse(BaseModel):
+    checklist_items: List[Dict[str, Any]] = []
+    has_sufficient_context: bool = False
+    message: Optional[str] = None
+
+class CalendarRequest(BaseModel):
+    situation: Optional[str] = None
+    conversation_history: List[Dict[str, Any]] = []
+    programs: List[str] = []
+
+class CalendarResponse(BaseModel):
+    events: List[Dict[str, Any]] = []
+    has_sufficient_context: bool = False
+    message: Optional[str] = None
+
 # Instantiate components
 ingestor = RAGIngestor()
 searcher = RAGSearcher()
@@ -173,6 +195,58 @@ def chat(request: ChatRequest):
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/checklist", response_model=ChecklistResponse)
+def generate_checklist_endpoint(request: ChecklistRequest):
+    """Generate personalized checklist based on conversation using RAG"""
+    try:
+        user_context = {
+            "situation": request.situation,
+            "programs": request.programs
+        }
+        
+        checklist_items = generate_checklist(request.conversation_history, user_context)
+        
+        if not checklist_items:
+            return ChecklistResponse(
+                checklist_items=[],
+                has_sufficient_context=False,
+                message="Not enough conversation context to generate a personalized checklist. Please have a few more exchanges with the assistant about your specific situation and needs."
+            )
+        
+        return ChecklistResponse(
+            checklist_items=checklist_items,
+            has_sufficient_context=True,
+            message=None
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error generating checklist: {str(e)}")
+
+@app.post("/calendar", response_model=CalendarResponse)
+def generate_calendar_endpoint(request: CalendarRequest):
+    """Generate personalized calendar events based on conversation using RAG"""
+    try:
+        user_context = {
+            "situation": request.situation,
+            "programs": request.programs
+        }
+        
+        events = generate_calendar_events(request.conversation_history, user_context)
+        
+        if not events:
+            return CalendarResponse(
+                events=[],
+                has_sufficient_context=False,
+                message="Not enough conversation context to generate personalized calendar events. Please discuss specific deadlines, renewal dates, or important dates with the assistant."
+            )
+        
+        return CalendarResponse(
+            events=events,
+            has_sufficient_context=True,
+            message=None
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error generating calendar: {str(e)}")
 
 @app.get("/health")
 def health():

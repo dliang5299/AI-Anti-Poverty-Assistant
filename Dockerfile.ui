@@ -11,8 +11,8 @@ RUN pip install --no-cache-dir -r /tmp/requirements.txt || pip install --no-cach
 # Copy application code
 COPY ui /ui
 
-# Expose port 8501 for FastAPI (matches serve_frontend.py)
-EXPOSE 8501
+# Expose port 8000 for FastAPI (matches serve_frontend.py)
+EXPOSE 8000
 
-# Run FastAPI with uvicorn (using serve_frontend which runs on port 8501)
-CMD ["uvicorn", "serve_frontend:app", "--host", "0.0.0.0", "--port", "8501"]
+# Run FastAPI with uvicorn (using serve_frontend which runs on port 8000)
+CMD ["uvicorn", "serve_frontend:app", "--host", "0.0.0.0", "--port", "8000"]
