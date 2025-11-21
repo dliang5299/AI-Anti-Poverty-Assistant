@@ -26,6 +26,15 @@ from utils import extract_programs_from_conversation, get_quick_replies
 from checklist_generator import generate_checklist
 from calendar_generator import generate_calendar_events
 
+# Import metrics tracking (UI folder only)
+from metrics import (
+    log_conversation,
+    log_download,
+    log_performance,
+    get_monthly_stats,
+    export_to_csv
+)
+
 # Deric's RAG Service URL
 # In Docker: use service name "api" (from docker-compose.yml)
 # Locally: use "localhost"
@@ -110,9 +119,14 @@ async def chat_endpoint(request: ChatRequest):
     Main chat endpoint - handles user messages and returns AI responses
     Calls Deric's RAG service, with fallback to demo if unavailable
     """
+    start_time = time.time()
+    rag_time_ms = None
+    error_type = None
+    
     try:
         # Try to call Deric's RAG service first
         try:
+            rag_start = time.time()
             async with httpx.AsyncClient(timeout=30.0) as client:
                 response = await client.post(
                     f"{RAG_SERVICE_URL}/chat",
@@ -124,14 +138,16 @@ async def chat_endpoint(request: ChatRequest):
                 )
                 response.raise_for_status()
                 rag_result = response.json()
+                rag_time_ms = int((time.time() - rag_start) * 1000)
                 
-                return ChatResponse(
+                result = ChatResponse(
                     response=rag_result["response"],
                     sources=rag_result.get("sources", []),
                     programs=rag_result.get("programs", [])
                 )
         except (httpx.RequestError, httpx.HTTPStatusError) as e:
             # Fallback to demo RAG if Deric's service is unavailable
+            error_type = type(e).__name__
             print(f"Warning: RAG service unavailable ({RAG_SERVICE_URL}), using fallback: {str(e)}")
             response_text, sources, programs = get_rag_response(
                 request.message, 
@@ -139,13 +155,28 @@ async def chat_endpoint(request: ChatRequest):
                 {"situation": request.situation}
             )
             
-            return ChatResponse(
+            result = ChatResponse(
                 response=response_text,
                 sources=sources,
                 programs=programs
             )
         
+        # Log metrics
+        response_time_ms = int((time.time() - start_time) * 1000)
+        message_count = len(request.conversation_history) + 1 if request.conversation_history else 1
+        
+        log_conversation(message_count=message_count)
+        log_performance(
+            response_time_ms=response_time_ms,
+            rag_time_ms=rag_time_ms,
+            error_type=error_type
+        )
+        
+        return result
+        
     except Exception as e:
+        error_type = type(e).__name__
+        log_performance(error_type=error_type)
         raise HTTPException(status_code=500, detail=f"Error processing chat: {str(e)}")
 
 @app.post("/download/checklist")
@@ -294,6 +325,9 @@ For questions or assistance, visit: https://benefitscal.com
         
         filename = f'benefits-checklist-{datetime.now().strftime("%Y%m%d")}.txt'
         
+        # Log download metrics
+        log_download('checklist', list(all_programs) if all_programs else None)
+        
         return Response(
             content=file_content,
             media_type='text/plain',
@@ -400,6 +434,9 @@ END:VCALENDAR"""
         # Create file in memory
         file_content = ics_content.encode('utf-8')
         
+        # Log download metrics
+        log_download('calendar', list(all_programs) if all_programs else None)
+        
         return Response(
             content=file_content,
             media_type='text/calendar',
@@ -434,6 +471,60 @@ async def health_check():
     Health check endpoint
     """
     return {"status": "healthy", "timestamp": datetime.now().isoformat()}
+
+@app.get("/api/admin/stats")
+async def get_stats(days: int = 30):
+    """
+    Get monthly statistics (admin endpoint)
+    
+    Args:
+        days: Number of days to look back (default 30)
+    
+    Returns:
+        Dictionary with statistics
+    """
+    try:
+        stats = get_monthly_stats(days=days)
+        return stats
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error getting stats: {str(e)}")
+
+@app.get("/api/admin/export")
+async def export_report():
+    """
+    Export metrics database to CSV files (admin endpoint)
+    
+    Returns:
+        ZIP file with all CSV exports
+    """
+    try:
+        import zipfile
+        from pathlib import Path
+        
+        # Export to temporary directory
+        temp_dir = Path("/tmp") / "benefitsflow_export"
+        temp_dir.mkdir(exist_ok=True)
+        
+        # Generate CSV files
+        csv_files = export_to_csv(output_dir=temp_dir)
+        
+        if not csv_files:
+            raise HTTPException(status_code=500, detail="No data to export")
+        
+        # Create ZIP file
+        zip_path = temp_dir / "benefitsflow_metrics_export.zip"
+        with zipfile.ZipFile(zip_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
+            for csv_file in csv_files:
+                zipf.write(csv_file, Path(csv_file).name)
+        
+        # Return ZIP file
+        return FileResponse(
+            path=str(zip_path),
+            media_type='application/zip',
+            filename=f'benefitsflow_metrics_{datetime.now().strftime("%Y%m%d")}.zip'
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error exporting report: {str(e)}")
 
 if __name__ == "__main__":
     import uvicorn

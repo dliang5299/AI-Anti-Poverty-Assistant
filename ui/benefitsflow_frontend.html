@@ -135,6 +135,8 @@
 
         .program-list {
             list-style: none;
+            padding: 0;
+            margin: 0;
         }
 
         .program-list li {
@@ -145,6 +147,34 @@
 
         .program-list li:last-child {
             border-bottom: none;
+        }
+        
+        #programsList {
+            min-height: 40px;
+        }
+        
+        #programsList .program-list {
+            max-height: 200px;
+            overflow-y: auto;
+            padding-right: 0.25rem;
+        }
+        
+        #programsList .program-list::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        #programsList .program-list::-webkit-scrollbar-track {
+            background: var(--bg-color);
+            border-radius: 3px;
+        }
+        
+        #programsList .program-list::-webkit-scrollbar-thumb {
+            background: var(--light-gray);
+            border-radius: 3px;
+        }
+        
+        #programsList .program-list::-webkit-scrollbar-thumb:hover {
+            background: var(--text-muted);
         }
 
         .sidebar-btn {
@@ -561,6 +591,118 @@
             color: white;
         }
 
+        .action-btn.loading {
+            opacity: 0.6;
+            cursor: not-allowed;
+            pointer-events: none;
+        }
+
+        /* Loading Overlay */
+        .loading-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(45, 42, 38, 0.75);
+            backdrop-filter: blur(4px);
+            z-index: 9999;
+            animation: fadeIn 0.2s ease-in;
+        }
+
+        .loading-overlay.active {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .loading-indicator {
+            background: white;
+            padding: 2.5rem 3rem;
+            border-radius: 16px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
+            text-align: center;
+            min-width: 320px;
+            max-width: 400px;
+            animation: slideUp 0.3s ease-out;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .loading-indicator .spinner {
+            width: 48px;
+            height: 48px;
+            margin: 0 auto 1.5rem;
+            border: 4px solid var(--light-gray);
+            border-top-color: var(--primary-color);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .loading-indicator .loading-text {
+            color: var(--text-color);
+            font-size: 1rem;
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+            line-height: 1.5;
+        }
+
+        .loading-indicator .loading-subtext {
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            margin-top: 0.5rem;
+            opacity: 0.8;
+        }
+
+        .loading-indicator .typing-dots {
+            display: flex;
+            justify-content: center;
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+
+        .typing-dot {
+            width: 8px;
+            height: 8px;
+            background: var(--primary-color);
+            border-radius: 50%;
+            animation: typingDot 1.4s ease-in-out infinite;
+        }
+
+        .typing-dot:nth-child(1) { animation-delay: 0s; }
+        .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+        .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+        @keyframes typingDot {
+            0%, 60%, 100% {
+                transform: translateY(0);
+                opacity: 0.5;
+            }
+            30% {
+                transform: translateY(-10px);
+                opacity: 1;
+            }
+        }
+
         .action-btn.calendar {
             background: #F39C12;
             color: white;
@@ -884,10 +1026,10 @@
 
     <!-- Action Buttons -->
     <div class="action-buttons" id="actionButtons" style="display: none;">
-        <button class="action-btn checklist" onclick="showChecklist()" title="Generate Checklist">
+        <button class="action-btn checklist" id="checklistBtn" onclick="downloadPDF()" title="Download Checklist">
             📋
         </button>
-        <button class="action-btn calendar" onclick="downloadCalendar()" title="Download Calendar">
+        <button class="action-btn calendar" id="calendarBtn" onclick="downloadCalendar()" title="Download Calendar">
             📅
         </button>
         <button class="action-btn restart" onclick="restartChat()" title="Start Over">
@@ -896,6 +1038,15 @@
         <button class="action-btn feedback" onclick="showFeedback()" title="Feedback">
             💬
         </button>
+    </div>
+
+    <!-- Loading Indicator -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-indicator" id="loadingIndicator">
+            <div class="spinner"></div>
+            <div class="loading-text" id="loadingText">Generating your personalized checklist...</div>
+            <div class="loading-subtext" id="loadingSubtext">This may take a moment</div>
+        </div>
     </div>
 
     <!-- Checklist Modal -->
@@ -1174,11 +1325,16 @@
                 hideTyping();
                 addMessage('bot', data.response, data.sources);
                 
-                // Update programs list
+                // Update programs list from API response
                 if (data.programs && data.programs.length > 0) {
                     data.programs.forEach(prog => programs.add(prog));
-                    updateProgramsList();
                 }
+                
+                // Also extract programs from the bot's response text
+                const extractedFromResponse = extractProgramsFromText(data.response);
+                extractedFromResponse.forEach(prog => programs.add(prog));
+                
+                updateProgramsList();
 
             } catch (error) {
                 console.error('Error sending message:', error);
@@ -1188,10 +1344,16 @@
                 const demoResponse = getDemoResponse(message);
                 addMessage('bot', demoResponse.text, demoResponse.sources);
                 
+                // Update programs from demo response
                 if (demoResponse.programs) {
                     demoResponse.programs.forEach(prog => programs.add(prog));
-                    updateProgramsList();
                 }
+                
+                // Also extract programs from the demo response text
+                const extractedFromDemo = extractProgramsFromText(demoResponse.text);
+                extractedFromDemo.forEach(prog => programs.add(prog));
+                
+                updateProgramsList();
             }
         }
 
@@ -1276,6 +1438,15 @@
             chatMessages.scrollTop = chatMessages.scrollHeight;
             
             messages.push({role, content: text, sources});
+            
+            // Extract programs from user messages and bot responses
+            const extracted = extractProgramsFromText(text);
+            extracted.forEach(prog => programs.add(prog));
+            
+            // Update programs list if we found new programs
+            if (extracted.length > 0) {
+                updateProgramsList();
+            }
         }
 
         // Start conversation
@@ -1299,22 +1470,95 @@
             document.getElementById('typingIndicator').classList.remove('active');
         }
 
+        // Extract programs from text (both user messages and bot responses)
+        function extractProgramsFromText(text) {
+            if (!text || typeof text !== 'string') return [];
+            
+            const foundPrograms = [];
+            const textLower = text.toLowerCase();
+            
+            // Program keywords mapping
+            const programKeywords = {
+                'calfresh': 'CalFresh',
+                'food stamps': 'CalFresh',
+                'snap': 'CalFresh',
+                'ebt': 'CalFresh',
+                'medi-cal': 'Medi-Cal',
+                'medicaid': 'Medi-Cal',
+                'unemployment': 'Unemployment Insurance',
+                'ui': 'Unemployment Insurance',
+                'edd': 'Unemployment Insurance',
+                'calworks': 'CalWORKs',
+                'cash aid': 'CalWORKs',
+                'section 8': 'Section 8',
+                'housing voucher': 'Section 8',
+                'covered california': 'Covered California',
+                'health insurance': 'Covered California',
+                'wic': 'WIC',
+                'women infants children': 'WIC',
+                'lifeline': 'Lifeline',
+                'phone assistance': 'Lifeline',
+                'liheap': 'LIHEAP',
+                'energy assistance': 'LIHEAP',
+                'tanf': 'TANF',
+                'general relief': 'General Relief',
+                'gr': 'General Relief'
+            };
+            
+            // Check for each program keyword
+            for (const [keyword, programName] of Object.entries(programKeywords)) {
+                if (textLower.includes(keyword) && !foundPrograms.includes(programName)) {
+                    foundPrograms.push(programName);
+                }
+            }
+            
+            return foundPrograms;
+        }
+
         // Update programs list in sidebar
         function updateProgramsList() {
             const listDiv = document.getElementById('programsList');
+            
+            // Also extract programs from all messages
+            messages.forEach(msg => {
+                const extracted = extractProgramsFromText(msg.content);
+                extracted.forEach(prog => programs.add(prog));
+            });
+            
             if (programs.size === 0) {
-                listDiv.innerHTML = '<p style="color: #999; font-size: 0.9rem;">Start a conversation to see programs</p>';
+                listDiv.innerHTML = '<p style="color: #999; font-size: 0.9rem; margin: 0;">Start a conversation to see programs</p>';
             } else {
-                listDiv.innerHTML = '<ul class="program-list">' + 
-                    Array.from(programs).map(p => `<li>• ${p}</li>`).join('') + 
-                '</ul>';
+                const programsArray = Array.from(programs).sort();
+                const count = programsArray.length;
+                listDiv.innerHTML = `
+                    <div style="margin-bottom: 0.5rem;">
+                        <p style="color: var(--text-muted); font-size: 0.85rem; margin: 0 0 0.5rem 0;">
+                            ${count} program${count !== 1 ? 's' : ''} mentioned
+                        </p>
+                    </div>
+                    <ul class="program-list" style="list-style: none; padding: 0; margin: 0; max-height: 200px; overflow-y: auto;">
+                        ${programsArray.map(p => `
+                            <li style="padding: 0.4rem 0.5rem; margin: 0.25rem 0; background: var(--panel-color); border-radius: 6px; font-size: 0.9rem; color: var(--text-color); border-left: 3px solid var(--primary-color);">
+                                ${p}
+                            </li>
+                        `).join('')}
+                    </ul>
+                `;
             }
         }
 
-        // Show checklist modal
+        // Show checklist modal (deprecated - now uses downloadPDF)
         async function showChecklist() {
+            // Redirect to download function
+            downloadPDF();
+        }
+        
+        // Legacy function for modal display (kept for compatibility)
+        async function showChecklistModal() {
             const modal = document.getElementById('checklistModal');
             const content = document.getElementById('checklistContent');
+            
+            showLoading('Loading checklist preview...', 'Fetching your personalized checklist');
             
             try {
                 // Try to get checklist from API
@@ -1338,7 +1582,9 @@
                 } else {
                     throw new Error('API not available');
                 }
+                hideLoading();
             } catch (error) {
+                hideLoading();
                 // Fallback checklist (when API unavailable)
                 content.innerHTML = `
                     <div style="margin-bottom: 1rem;">
@@ -1366,8 +1612,54 @@
             modal.classList.add('active');
         }
 
+        // Show loading indicator
+        function showLoading(text = 'Generating...', subtext = 'This may take a moment') {
+            const overlay = document.getElementById('loadingOverlay');
+            const loadingText = document.getElementById('loadingText');
+            const loadingSubtext = document.getElementById('loadingSubtext');
+            
+            if (!overlay) {
+                console.error('Loading overlay not found!');
+                return;
+            }
+            
+            loadingText.textContent = text;
+            loadingSubtext.textContent = subtext;
+            overlay.classList.add('active');
+            console.log('Loading indicator shown:', text);
+            
+            // Disable buttons
+            document.getElementById('checklistBtn').classList.add('loading');
+            document.getElementById('calendarBtn').classList.add('loading');
+        }
+
+        // Update loading message
+        function updateLoading(text, subtext = null) {
+            const loadingText = document.getElementById('loadingText');
+            const loadingSubtext = document.getElementById('loadingSubtext');
+            loadingText.textContent = text;
+            if (subtext !== null) {
+                loadingSubtext.textContent = subtext;
+            }
+        }
+
+        // Hide loading indicator
+        function hideLoading() {
+            const overlay = document.getElementById('loadingOverlay');
+            if (overlay) {
+                overlay.classList.remove('active');
+                console.log('Loading indicator hidden');
+            }
+            
+            // Enable buttons
+            document.getElementById('checklistBtn').classList.remove('loading');
+            document.getElementById('calendarBtn').classList.remove('loading');
+        }
+
         // Download text checklist
         async function downloadPDF() {
+            showLoading('Preparing your checklist...', 'Analyzing your conversation');
+            
             try {
                 // Collect all programs mentioned in conversation
                 const allPrograms = Array.from(programs);
@@ -1384,13 +1676,25 @@
                 
                 console.log('Sending checklist download request:', requestBody);
                 
-                const response = await fetch(`${API_BASE_URL}/download/checklist`, {
+                // Update progress message before starting the fetch
+                updateLoading('Fetching relevant information...', 'Searching benefit programs');
+                
+                // Start the fetch - this is where the actual generation happens
+                const fetchPromise = fetch(`${API_BASE_URL}/download/checklist`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                     },
                     body: JSON.stringify(requestBody)
                 });
+                
+                // Update progress message after a short delay (while fetch is in progress)
+                setTimeout(() => {
+                    updateLoading('Generating with AI...', 'Creating your personalized checklist');
+                }, 1000);
+                
+                // Wait for the response - loading indicator stays visible during this entire time
+                const response = await fetchPromise;
 
                 if (!response.ok) {
                     let errorMessage = `Server error: ${response.status}`;
@@ -1411,6 +1715,9 @@
                     console.warn('Unexpected content type:', contentType);
                 }
 
+                // Update progress - preparing download
+                updateLoading('Preparing download...', 'Almost ready!');
+                
                 const blob = await response.blob();
                 
                 if (blob.size === 0) {
@@ -1436,8 +1743,12 @@
                 a.click();
                 document.body.removeChild(a);
                 window.URL.revokeObjectURL(url);
+                
+                // Hide loading indicator after download starts
+                hideLoading();
                 alert('📄 Text checklist downloaded successfully!');
             } catch (error) {
+                hideLoading();
                 console.error('Checklist download error:', error);
                 let errorMsg = 'Unknown error occurred';
                 if (error && typeof error === 'object') {
@@ -1463,9 +1774,17 @@
 
         // Download calendar
         async function downloadCalendar() {
+            showLoading('Preparing your calendar...', 'Analyzing your conversation');
+            
             try {
                 // Collect all programs mentioned in conversation
                 const allPrograms = Array.from(programs);
+                
+                // Update progress message
+                updateLoading('Fetching relevant information...', 'Searching important dates');
+                
+                // Small delay to show the message
+                await new Promise(resolve => setTimeout(resolve, 300));
                 
                 const response = await fetch(`${API_BASE_URL}/download/calendar`, {
                     method: 'POST',
@@ -1482,6 +1801,9 @@
                         programs: allPrograms
                     })
                 });
+                
+                // Update progress message while processing
+                updateLoading('Generating with AI...', 'Creating your personalized calendar');
 
                 if (response.ok) {
                     const blob = await response.blob();
@@ -1493,11 +1815,13 @@
                     a.click();
                     document.body.removeChild(a);
                     window.URL.revokeObjectURL(url);
+                    hideLoading();
                     alert('📅 Calendar downloaded successfully!');
                 } else {
                     throw new Error('Download failed');
                 }
             } catch (error) {
+                hideLoading();
                 // Fallback calendar (when API unavailable)
                 const icsContent = `BEGIN:VCALENDAR
 VERSION:2.0
@@ -1528,6 +1852,7 @@ END:VCALENDAR`;
                 a.click();
                 document.body.removeChild(a);
                 window.URL.revokeObjectURL(url);
+                hideLoading();
                 alert('📅 Calendar downloaded successfully!');
             }
         }
