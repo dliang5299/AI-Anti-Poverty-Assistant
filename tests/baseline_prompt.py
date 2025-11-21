@@ -2,6 +2,10 @@ import boto3
 import pandas as pd
 from datetime import datetime
 
+from dotenv import load_dotenv
+import os
+load_dotenv()  # loads .env into environment variables
+
 REGION = "us-west-2"
 
 # Check models available for on-demand inference

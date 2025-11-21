@@ -12,6 +12,10 @@ from typing import Any, Dict, List, Optional
 
 import requests
 
+from dotenv import load_dotenv
+import os
+load_dotenv()  # loads .env into environment variables
+
 # -----------------------------
 # Defaults & built-in prompts
 # -----------------------------

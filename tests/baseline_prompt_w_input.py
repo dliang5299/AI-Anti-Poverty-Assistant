@@ -3,6 +3,10 @@ import pandas as pd
 from datetime import datetime
 from tests.evaluation import evaluate_response
 
+from dotenv import load_dotenv
+import os
+load_dotenv()  # loads .env into environment variables
+
 REGION = "us-west-2"
 
 # Check models available for on-demand inference
@@ -26,6 +30,7 @@ system_instructions = (
 )
 
 df_input = pd.read_csv("tests/gold_dataset.csv")
+df_input = df_input[df_input['Status'] == "Done"]
 prompts_df = df_input.drop_duplicates(subset=["user_question"], keep="first")
 user_prompts = prompts_df["user_question"].dropna().tolist()
 id_map = dict(zip(prompts_df["user_question"], prompts_df["id"]))
@@ -82,6 +87,8 @@ for MODEL_ID in MODELS:
             "model_id": MODEL_ID,
             "user_prompt": user_prompt,
             "id": row_id,
+            "gold_context": gold_context,
+            "gold_response": gold_response,
             "model_answer": model_answer,
         }
         if isinstance(eval_metrics, dict):

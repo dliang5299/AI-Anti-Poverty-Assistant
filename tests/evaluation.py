@@ -32,6 +32,8 @@ from nltk.sentiment import SentimentIntensityAnalyzer
 
 _BEDROCK_CLIENT = None
 _SIA = None
+_PUNKT_READY = False
+_FALLBACK_SENT_PATCHED = False
 
 
 def _get_bedrock_client():
@@ -81,6 +83,72 @@ def _get_sia():
     return _SIA
 
 
+def _ensure_nltk_punkt() -> bool:
+    """
+    Make sure NLTK sentence tokenizers are available for readability.
+
+    The readability library depends on nltk.sent_tokenize, which requires both
+    'punkt' and (as of nltk>=3.9) 'punkt_tab'. We try to detect and, if needed,
+    download them quietly. Returns True if ready, False otherwise.
+    """
+    global _PUNKT_READY
+
+    if _PUNKT_READY:
+        return True
+
+    if nltk is None:
+        return False
+
+    def _has_tokenizer(name: str) -> bool:
+        try:
+            nltk.data.find(f"tokenizers/{name}")
+            return True
+        except LookupError:
+            return False
+
+    punkt_ok = _has_tokenizer("punkt")
+    punkt_tab_ok = _has_tokenizer("punkt_tab")
+
+    if not (punkt_ok and punkt_tab_ok):
+        try:
+            nltk.download("punkt", quiet=True)
+            nltk.download("punkt_tab", quiet=True)
+            punkt_ok = _has_tokenizer("punkt")
+            punkt_tab_ok = _has_tokenizer("punkt_tab")
+        except Exception:
+            # Network may be disabled; fall back to a simple regex-based splitter.
+            pass
+
+    if punkt_ok and punkt_tab_ok:
+        _PUNKT_READY = True
+        return True
+
+    # If we couldn't get the tokenizer data, monkey-patch a simple sentence
+    # splitter so readability can proceed instead of failing.
+    global _FALLBACK_SENT_PATCHED
+    if not _FALLBACK_SENT_PATCHED:
+        try:
+            import nltk.tokenize as _tk
+            import readability.text.analyzer as _ra
+            import re as _re
+
+            def _fallback_sent_tokenize(text: str):
+                # Naive split on sentence-ending punctuation followed by space.
+                return [
+                    s.strip()
+                    for s in _re.split(r"(?<=[.!?])\s+", text)
+                    if s.strip()
+                ]
+
+            _tk.sent_tokenize = _fallback_sent_tokenize
+            _ra.sent_tokenize = _fallback_sent_tokenize
+            _FALLBACK_SENT_PATCHED = True
+        except Exception:
+            return False
+
+    return True
+
+
 # ---------------------------------------------------------------------------
 # Readability: Flesch-Kincaid grade level (py-readability-metrics)
 # ---------------------------------------------------------------------------
@@ -99,11 +167,18 @@ def _flesch_kincaid_grade(text: str) -> Optional[float]:
         # Library not installed / import failed
         return None
 
+    # Ensure NLTK sentence tokenizers are available; otherwise readability
+    # will raise LookupError and we silently fall back to None.
+    if not _ensure_nltk_punkt():
+        return None
+
     try:
         r = Readability(text)
         fk = r.flesch_kincaid()
-        # py-readability-metrics exposes .score as the numeric FK grade
-        return float(fk.score)
+        # Some readability libs return an object with .score, others return the
+        # numeric value directly, so support both shapes.
+        score = fk.score if hasattr(fk, "score") else fk
+        return float(score)
     except Exception:
         # Short or malformed text, or any library error
         return None
@@ -133,8 +208,8 @@ def _nltk_sentiment(text: str) -> Optional[float]:
 def _bedrock_eval(
     user_prompt: str,
     model_answer: str,
-    gold_context: Optional[str] = None,
-    gold_response: Optional[str] = None,
+    gold_context: str,
+    gold_response: str,
 ) -> Dict[str, Optional[float]]:
     """Use a Bedrock model as an LLM judge to score multiple metrics.
 
