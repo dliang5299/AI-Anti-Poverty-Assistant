@@ -472,7 +472,7 @@ async def health_check():
     """
     return {"status": "healthy", "timestamp": datetime.now().isoformat()}
 
-@app.get("/api/admin/stats")
+@app.get("/admin/stats")
 async def get_stats(days: int = 30):
     """
     Get monthly statistics (admin endpoint)
@@ -489,7 +489,7 @@ async def get_stats(days: int = 30):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error getting stats: {str(e)}")
 
-@app.get("/api/admin/export")
+@app.get("/admin/export")
 async def export_report():
     """
     Export metrics database to CSV files (admin endpoint)
