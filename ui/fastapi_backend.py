@@ -17,6 +17,12 @@ from pathlib import Path
 from datetime import datetime, timedelta
 import io
 import httpx
+from reportlab.lib.pagesizes import letter
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib.units import inch
+from reportlab.lib.colors import HexColor
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, PageBreak
+from reportlab.lib.enums import TA_LEFT, TA_CENTER
 
 # Import your existing modules (fallback)
 from rag_backend import get_rag_response
@@ -179,10 +185,255 @@ async def chat_endpoint(request: ChatRequest):
         log_performance(error_type=error_type)
         raise HTTPException(status_code=500, detail=f"Error processing chat: {str(e)}")
 
+def _escape_xml(text: str) -> str:
+    """Escape XML/HTML special characters for safe PDF generation"""
+    if not text:
+        return ""
+    return (str(text)
+            .replace("&", "&amp;")
+            .replace("<", "&lt;")
+            .replace(">", "&gt;")
+            .replace('"', "&quot;")
+            .replace("'", "&apos;"))
+
+def generate_checklist_pdf(checklist_items: List[Dict[str, Any]], situation: str, programs: List[str]) -> bytes:
+    """
+    Generate a nicely formatted PDF checklist using reportlab
+    
+    Args:
+        checklist_items: List of checklist item dictionaries
+        situation: User's situation
+        programs: List of programs mentioned
+    
+    Returns:
+        PDF file content as bytes
+    """
+    buffer = io.BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=letter,
+                           rightMargin=0.75*inch, leftMargin=0.75*inch,
+                           topMargin=0.75*inch, bottomMargin=0.75*inch)
+    
+    # Container for the 'Flowable' objects
+    elements = []
+    
+    # Define custom styles
+    styles = getSampleStyleSheet()
+    
+    # Title style
+    title_style = ParagraphStyle(
+        'CustomTitle',
+        parent=styles['Heading1'],
+        fontSize=24,
+        textColor=HexColor('#1a5490'),
+        spaceAfter=12,
+        alignment=TA_CENTER,
+        fontName='Helvetica-Bold'
+    )
+    
+    # Subtitle style
+    subtitle_style = ParagraphStyle(
+        'CustomSubtitle',
+        parent=styles['Normal'],
+        fontSize=12,
+        textColor=HexColor('#666666'),
+        spaceAfter=20,
+        alignment=TA_CENTER
+    )
+    
+    # Section header style
+    section_style = ParagraphStyle(
+        'SectionHeader',
+        parent=styles['Heading2'],
+        fontSize=14,
+        textColor=HexColor('#1a5490'),
+        spaceAfter=12,
+        spaceBefore=20,
+        fontName='Helvetica-Bold',
+        borderWidth=1,
+        borderColor=HexColor('#1a5490'),
+        borderPadding=8,
+        backColor=HexColor('#e8f0f8')
+    )
+    
+    # Item title style
+    item_title_style = ParagraphStyle(
+        'ItemTitle',
+        parent=styles['Heading3'],
+        fontSize=13,
+        textColor=HexColor('#2c3e50'),
+        spaceAfter=6,
+        spaceBefore=16,
+        fontName='Helvetica-Bold'
+    )
+    
+    # Description style
+    desc_style = ParagraphStyle(
+        'Description',
+        parent=styles['Normal'],
+        fontSize=10,
+        textColor=HexColor('#444444'),
+        spaceAfter=8,
+        leftIndent=20
+    )
+    
+    # Detail style
+    detail_style = ParagraphStyle(
+        'Detail',
+        parent=styles['Normal'],
+        fontSize=10,
+        textColor=HexColor('#555555'),
+        spaceAfter=4,
+        leftIndent=40,
+        bulletIndent=30
+    )
+    
+    # Deadline style
+    deadline_style = ParagraphStyle(
+        'Deadline',
+        parent=styles['Normal'],
+        fontSize=10,
+        textColor=HexColor('#c0392b'),
+        spaceAfter=6,
+        leftIndent=20,
+        fontName='Helvetica-Bold'
+    )
+    
+    # Link style
+    link_style = ParagraphStyle(
+        'Link',
+        parent=styles['Normal'],
+        fontSize=9,
+        textColor=HexColor('#3498db'),
+        spaceAfter=8,
+        leftIndent=20
+    )
+    
+    # Normal text style
+    normal_style = styles['Normal']
+    
+    # Add title
+    elements.append(Paragraph("BenefitsFlow Personalized Checklist", title_style))
+    elements.append(Paragraph(f"Generated: {datetime.now().strftime('%B %d, %Y at %I:%M %p')}", subtitle_style))
+    elements.append(Spacer(1, 0.2*inch))
+    
+    # Add situation section
+    if situation and situation != 'General':
+        elements.append(Paragraph("Your Situation", section_style))
+        elements.append(Paragraph(_escape_xml(situation), desc_style))
+        elements.append(Spacer(1, 0.15*inch))
+    
+    # Add programs section if available
+    if programs:
+        elements.append(Paragraph("Programs Mentioned", section_style))
+        programs_text = ", ".join([_escape_xml(str(p)) for p in programs if p])
+        if programs_text:
+            elements.append(Paragraph(programs_text, desc_style))
+        elements.append(Spacer(1, 0.15*inch))
+    
+    # Add checklist items section
+    elements.append(Paragraph("Checklist Items", section_style))
+    
+    # Add each checklist item
+    for i, item in enumerate(checklist_items, 1):
+        if not isinstance(item, dict):
+            continue
+        
+        # Item number and title with checkbox
+        title = _escape_xml(item.get('title', 'Item'))
+        item_header = f"☐ {i}. {title}"
+        elements.append(Paragraph(item_header, item_title_style))
+        
+        # Description
+        description = item.get('description', '')
+        if description:
+            elements.append(Paragraph(_escape_xml(description), desc_style))
+        
+        # Deadline
+        deadline = item.get('deadline', '')
+        if deadline:
+            deadline_escaped = _escape_xml(deadline)
+            deadline_text = f"<b>Deadline:</b> {deadline_escaped}"
+            elements.append(Paragraph(deadline_text, deadline_style))
+        
+        # Action items/details
+        details = item.get('details', [])
+        if details and isinstance(details, list):
+            for detail in details:
+                if detail:
+                    # Use bullet point
+                    detail_escaped = _escape_xml(str(detail))
+                    detail_text = f"• {detail_escaped}"
+                    elements.append(Paragraph(detail_text, detail_style))
+        
+        # Link
+        link = item.get('link', '')
+        if link:
+            link_escaped = _escape_xml(link)
+            link_text = f"<link href='{link_escaped}' color='blue'><u>Visit: {link_escaped}</u></link>"
+            elements.append(Paragraph(link_text, link_style))
+        
+        # Add spacing between items
+        elements.append(Spacer(1, 0.1*inch))
+    
+    # Add next steps section
+    elements.append(PageBreak())
+    elements.append(Paragraph("Next Steps", section_style))
+    
+    next_steps = [
+        "Review each item above carefully",
+        "Check eligibility requirements for each program",
+        "Gather required documents before applying",
+        "Apply for benefits that match your situation",
+        "Keep track of application deadlines and follow up"
+    ]
+    
+    for step in next_steps:
+        elements.append(Paragraph(f"• {step}", detail_style))
+    
+    elements.append(Spacer(1, 0.2*inch))
+    
+    # Add helpful resources section
+    elements.append(Paragraph("Helpful Resources", section_style))
+    
+    resources = [
+        ("BenefitsCal.com", "Apply for CalFresh, Medi-Cal, and more"),
+        ("EDD.ca.gov", "Unemployment Insurance and job services"),
+        ("DHCS.ca.gov", "Health coverage and Medi-Cal information"),
+        ("211california.org", "Local resources and assistance")
+    ]
+    
+    for resource_name, resource_desc in resources:
+        resource_text = f"<b>{resource_name}</b> - {resource_desc}"
+        elements.append(Paragraph(resource_text, desc_style))
+        elements.append(Spacer(1, 0.05*inch))
+    
+    elements.append(Spacer(1, 0.2*inch))
+    
+    # Add footer
+    footer_text = "Generated by BenefitsFlow - California Benefits Navigator<br/>For questions or assistance, visit: https://benefitscal.com"
+    footer_style = ParagraphStyle(
+        'Footer',
+        parent=styles['Normal'],
+        fontSize=9,
+        textColor=HexColor('#888888'),
+        alignment=TA_CENTER,
+        spaceBefore=20
+    )
+    elements.append(Paragraph(footer_text, footer_style))
+    
+    # Build PDF
+    doc.build(elements)
+    
+    # Get the value of the BytesIO buffer
+    pdf_bytes = buffer.getvalue()
+    buffer.close()
+    
+    return pdf_bytes
+
 @app.post("/download/checklist")
 async def download_checklist(request: DownloadRequest):
     """
-    Generate and download a personalized checklist as a text file using RAG service
+    Generate and download a personalized checklist as a PDF file using RAG service
     """
     try:
         # Validate request
@@ -232,108 +483,44 @@ async def download_checklist(request: DownloadRequest):
             checklist_items = []
         
         if not checklist_items or len(checklist_items) == 0:
-            # Return fallback message if no items generated
-            content = f"""BenefitsFlow Personalized Checklist
-Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
-{'=' * 60}
-
-Not enough conversation context to generate a personalized checklist.
-
-Please continue your conversation with the assistant to provide more details about:
-• Your specific situation
-• Programs you're interested in
-• Deadlines or important dates
-• Documents you need to gather
-
-Then try downloading your checklist again.
-"""
-            return Response(
-                content=content.encode('utf-8'),
-                media_type='text/plain',
-                headers={
-                    "Content-Disposition": f"attachment; filename=benefits-checklist-{datetime.now().strftime('%Y%m%d')}.txt"
-                }
+            # Return fallback PDF if no items generated
+            fallback_items = [{
+                'title': 'Continue Conversation',
+                'description': 'Not enough conversation context to generate a personalized checklist.',
+                'deadline': '',
+                'details': [
+                    'Continue your conversation with the assistant',
+                    'Provide more details about your specific situation',
+                    'Mention programs you\'re interested in',
+                    'Share any deadlines or important dates',
+                    'Describe documents you need to gather'
+                ],
+                'link': ''
+            }]
+            pdf_content = generate_checklist_pdf(
+                fallback_items,
+                request.situation or 'General',
+                list(all_programs)
+            )
+        else:
+            # Generate PDF with checklist items
+            pdf_content = generate_checklist_pdf(
+                checklist_items,
+                request.situation or 'General',
+                list(all_programs)
             )
         
-        # Format checklist items into readable text
-        checklist_text = []
-        try:
-            for i, item in enumerate(checklist_items, 1):
-                if not isinstance(item, dict):
-                    continue
-                checklist_text.append(f"{i}. {item.get('title', 'Item')}")
-                checklist_text.append(f"   {item.get('description', '')}")
-                if item.get('deadline'):
-                    checklist_text.append(f"   Deadline: {item['deadline']}")
-                if item.get('details') and isinstance(item['details'], list):
-                    checklist_text.append("   Action Items:")
-                    for detail in item['details']:
-                        if detail:
-                            checklist_text.append(f"     • {detail}")
-                if item.get('link'):
-                    checklist_text.append(f"   Website: {item['link']}")
-                checklist_text.append("")  # Empty line between items
-        except Exception as format_error:
-            print(f"Error formatting checklist items: {format_error}")
-            # Fallback to simple format
-            for i, item in enumerate(checklist_items, 1):
-                checklist_text.append(f"{i}. {str(item.get('title', 'Item'))}")
-        
-        # Build complete text file content
-        checklist_body = chr(10).join(checklist_text) if checklist_text else "No checklist items generated."
-        
-        content = f"""BenefitsFlow Personalized Checklist
-Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
-{'=' * 60}
-
-Your Situation: {request.situation or 'General'}
-
-{'=' * 60}
-
-CHECKLIST ITEMS:
-{'=' * 60}
-
-{checklist_body}
-
-{'=' * 60}
-
-NEXT STEPS:
-{'=' * 60}
-1. Review each item above carefully
-2. Check eligibility requirements for each program
-3. Gather required documents before applying
-4. Apply for benefits that match your situation
-5. Keep track of application deadlines and follow up
-
-{'=' * 60}
-
-HELPFUL RESOURCES:
-{'=' * 60}
-• BenefitsCal.com - Apply for CalFresh, Medi-Cal, and more
-• EDD.ca.gov - Unemployment Insurance and job services
-• DHCS.ca.gov - Health coverage and Medi-Cal information
-• 211california.org - Local resources and assistance
-
-{'=' * 60}
-
-Generated by BenefitsFlow - California Benefits Navigator
-For questions or assistance, visit: https://benefitscal.com
-"""
-        
-        # Create file in memory as text/plain
-        file_content = content.encode('utf-8')
-        
-        filename = f'benefits-checklist-{datetime.now().strftime("%Y%m%d")}.txt'
+        filename = f'benefits-checklist-{datetime.now().strftime("%Y%m%d")}.pdf'
         
         # Log download metrics
         log_download('checklist', list(all_programs) if all_programs else None)
         
         return Response(
-            content=file_content,
-            media_type='text/plain',
+            content=pdf_content,
+            media_type='application/pdf',
             headers={
                 "Content-Disposition": f"attachment; filename={filename}",
-                "Content-Length": str(len(file_content))
+                "Content-Length": str(len(pdf_content))
             }
         )
         

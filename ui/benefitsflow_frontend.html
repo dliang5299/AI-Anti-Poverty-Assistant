@@ -1064,7 +1064,7 @@
             </div>
             <div class="modal-footer">
                 <button class="modal-btn primary" onclick="downloadPDF()" style="width: 100%;">
-                    📥 Download Text File
+                    📥 Download PDF Checklist
                 </button>
             </div>
         </div>
@@ -1117,8 +1117,17 @@
             // Remove patterns like 【2†L1-L9】, 【Source 5†L0-L2】, etc.
             text = text.replace(/【[^】]+】/g, '');
             
-            // First, convert markdown tables to HTML tables
+            // Convert markdown links first (before other processing)
+            text = text.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>');
+            
+            // Convert inline code
+            text = text.replace(/`([^`]+)`/g, '<code style="background: #f4f4f4; padding: 2px 6px; border-radius: 3px; font-family: monospace;">$1</code>');
+            
+            // Convert markdown tables to HTML tables (before line break conversion)
             text = convertMarkdownTables(text);
+            
+            // Convert unordered lists (bullet points)
+            text = convertMarkdownLists(text);
             
             // Convert **text** to <strong>text</strong>
             text = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
@@ -1126,18 +1135,123 @@
             // Convert *text* to <em>text</em> (italics) - but not if it's part of **bold**
             text = text.replace(/(?<!\*)\*([^*]+?)\*(?!\*)/g, '<em>$1</em>');
             
-            // Convert headers
-            text = text.replace(/^### (.*$)/gm, '<h3>$1</h3>');
-            text = text.replace(/^## (.*$)/gm, '<h2>$1</h2>');
-            text = text.replace(/^# (.*$)/gm, '<h1>$1</h1>');
+            // Convert headers (after lists to avoid conflicts)
+            text = text.replace(/^### (.*$)/gm, '<h3 style="margin-top: 1em; margin-bottom: 0.5em; font-size: 1.1em; font-weight: bold;">$1</h3>');
+            text = text.replace(/^## (.*$)/gm, '<h2 style="margin-top: 1.2em; margin-bottom: 0.6em; font-size: 1.3em; font-weight: bold;">$1</h2>');
+            text = text.replace(/^# (.*$)/gm, '<h1 style="margin-top: 1.5em; margin-bottom: 0.8em; font-size: 1.5em; font-weight: bold;">$1</h1>');
             
             // Convert horizontal rules
-            text = text.replace(/^---$/gm, '<hr>');
+            text = text.replace(/^---$/gm, '<hr style="border: none; border-top: 1px solid #ddd; margin: 1em 0;">');
             
-            // Convert line breaks (but preserve tables)
-            text = text.replace(/\n/g, '<br>');
+            // Convert line breaks (but preserve HTML elements)
+            // Split by double line breaks for paragraphs, single for line breaks
+            const paragraphs = text.split(/\n\n+/);
+            text = paragraphs.map(para => {
+                // Don't add <br> inside HTML tags (tables, lists, etc.)
+                if (para.trim().startsWith('<') && (para.includes('<table') || para.includes('<ul') || para.includes('<ol'))) {
+                    return para;
+                }
+                // Convert single line breaks to <br> within paragraphs
+                return para.replace(/\n/g, '<br>');
+            }).join('<br><br>');
             
             return text;
+        }
+        
+        // Convert markdown lists to HTML lists
+        function convertMarkdownLists(text) {
+            const lines = text.split('\n');
+            const result = [];
+            let i = 0;
+            
+            while (i < lines.length) {
+                const line = lines[i];
+                
+                // Check for unordered list (starts with -, *, or +)
+                if (/^[\s]*[-*+]\s+/.test(line)) {
+                    const listItems = [];
+                    const indentLevel = line.match(/^[\s]*/)[0].length;
+                    
+                    // Collect consecutive list items at same indent level
+                    while (i < lines.length) {
+                        const currentLine = lines[i];
+                        const currentIndent = currentLine.match(/^[\s]*/)[0].length;
+                        
+                        if (/^[\s]*[-*+]\s+/.test(currentLine) && currentIndent === indentLevel) {
+                            // Extract list item text (remove bullet and leading spaces)
+                            const itemText = currentLine.replace(/^[\s]*[-*+]\s+/, '').trim();
+                            listItems.push(itemText);
+                            i++;
+                        } else if (currentLine.trim() === '' && i + 1 < lines.length && 
+                                   /^[\s]*[-*+]\s+/.test(lines[i + 1]) && 
+                                   lines[i + 1].match(/^[\s]*/)[0].length === indentLevel) {
+                            // Empty line between list items - continue
+                            i++;
+                        } else {
+                            break;
+                        }
+                    }
+                    
+                    // Convert to HTML list
+                    if (listItems.length > 0) {
+                        const listHTML = '<ul style="margin: 0.5em 0; padding-left: 1.5em; list-style-type: disc;">' +
+                            listItems.map(item => {
+                                // Process markdown inside list items
+                                let processedItem = item;
+                                processedItem = processedItem.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+                                processedItem = processedItem.replace(/(?<!\*)\*([^*]+?)\*(?!\*)/g, '<em>$1</em>');
+                                processedItem = processedItem.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank">$1</a>');
+                                return `<li style="margin: 0.3em 0;">${processedItem}</li>`;
+                            }).join('') +
+                            '</ul>';
+                        result.push(listHTML);
+                        continue;
+                    }
+                }
+                
+                // Check for ordered list (starts with number.)
+                if (/^[\s]*\d+\.\s+/.test(line)) {
+                    const listItems = [];
+                    const indentLevel = line.match(/^[\s]*/)[0].length;
+                    
+                    // Collect consecutive numbered items
+                    while (i < lines.length) {
+                        const currentLine = lines[i];
+                        const currentIndent = currentLine.match(/^[\s]*/)[0].length;
+                        
+                        if (/^[\s]*\d+\.\s+/.test(currentLine) && currentIndent === indentLevel) {
+                            const itemText = currentLine.replace(/^[\s]*\d+\.\s+/, '').trim();
+                            listItems.push(itemText);
+                            i++;
+                        } else if (currentLine.trim() === '' && i + 1 < lines.length && 
+                                   /^[\s]*\d+\.\s+/.test(lines[i + 1]) && 
+                                   lines[i + 1].match(/^[\s]*/)[0].length === indentLevel) {
+                            i++;
+                        } else {
+                            break;
+                        }
+                    }
+                    
+                    if (listItems.length > 0) {
+                        const listHTML = '<ol style="margin: 0.5em 0; padding-left: 1.5em;">' +
+                            listItems.map(item => {
+                                let processedItem = item;
+                                processedItem = processedItem.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+                                processedItem = processedItem.replace(/(?<!\*)\*([^*]+?)\*(?!\*)/g, '<em>$1</em>');
+                                processedItem = processedItem.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank">$1</a>');
+                                return `<li style="margin: 0.3em 0;">${processedItem}</li>`;
+                            }).join('') +
+                            '</ol>';
+                        result.push(listHTML);
+                        continue;
+                    }
+                }
+                
+                result.push(line);
+                i++;
+            }
+            
+            return result.join('\n');
         }
         
         // Convert markdown tables to HTML tables
@@ -1328,13 +1442,15 @@
                 // Update programs list from API response
                 if (data.programs && data.programs.length > 0) {
                     data.programs.forEach(prog => programs.add(prog));
+                    updateProgramsList(); // Update immediately when programs come from API
                 }
                 
                 // Also extract programs from the bot's response text
                 const extractedFromResponse = extractProgramsFromText(data.response);
-                extractedFromResponse.forEach(prog => programs.add(prog));
-                
-                updateProgramsList();
+                if (extractedFromResponse.length > 0) {
+                    extractedFromResponse.forEach(prog => programs.add(prog));
+                    updateProgramsList(); // Update when programs are extracted from text
+                }
 
             } catch (error) {
                 console.error('Error sending message:', error);
@@ -1407,20 +1523,29 @@
                 sourcesHTML = sources.map(s => {
                     // Handle sources: if url is empty but name looks like a URL, use name as URL
                     // Otherwise use the url field, or no link if neither is available
-                    let sourceUrl = s.url || '';
+                    let sourceUrl = s.url || s.source_url || '';
                     let sourceName = s.name || 'Source';
                     
                     // If name looks like a URL and url is empty, use name as URL
                     if (!sourceUrl && sourceName && (sourceName.startsWith('http://') || sourceName.startsWith('https://'))) {
-                        sourceUrl = sourceName;
-                        sourceName = new URL(sourceName).hostname; // Display just the domain
+                        try {
+                            sourceUrl = sourceName;
+                            sourceName = new URL(sourceName).hostname; // Display just the domain
+                        } catch (e) {
+                            // If URL parsing fails, use the full name
+                            sourceUrl = sourceName;
+                        }
                     }
                     
                     // If we have a URL, make it clickable; otherwise just show the name
                     if (sourceUrl) {
-                        return `<span class="source-tag" onclick="window.open('${sourceUrl}', '_blank')">${sourceName}${s.date ? ' • ' + s.date : ''}</span>`;
+                        // Escape quotes in URL to prevent XSS
+                        const safeUrl = sourceUrl.replace(/'/g, "&#39;").replace(/"/g, "&quot;");
+                        const safeName = sourceName.replace(/'/g, "&#39;").replace(/"/g, "&quot;");
+                        return `<span class="source-tag" onclick="window.open('${safeUrl}', '_blank')">${safeName}${s.date ? ' • ' + s.date : ''}</span>`;
                     } else {
-                        return `<span class="source-tag">${sourceName}${s.date ? ' • ' + s.date : ''}</span>`;
+                        const safeName = sourceName.replace(/'/g, "&#39;").replace(/"/g, "&quot;");
+                        return `<span class="source-tag">${safeName}${s.date ? ' • ' + s.date : ''}</span>`;
                     }
                 }).join(' ');
             }
@@ -1441,11 +1566,9 @@
             
             // Extract programs from user messages and bot responses
             const extracted = extractProgramsFromText(text);
-            extracted.forEach(prog => programs.add(prog));
-            
-            // Update programs list if we found new programs
             if (extracted.length > 0) {
-                updateProgramsList();
+                extracted.forEach(prog => programs.add(prog));
+                updateProgramsList(); // Always update when programs are found
             }
         }
 
@@ -1458,6 +1581,9 @@
             
             // Add welcome message
             addMessage('bot', "Hi! I'm here to help you navigate California's public benefits. What brings you here today?");
+            
+            // Initialize programs list display
+            updateProgramsList();
         }
 
         // Show/hide typing indicator
@@ -1656,7 +1782,7 @@
             document.getElementById('calendarBtn').classList.remove('loading');
         }
 
-        // Download text checklist
+        // Download PDF checklist
         async function downloadPDF() {
             showLoading('Preparing your checklist...', 'Analyzing your conversation');
             
@@ -1711,7 +1837,7 @@
 
                 // Check if response is actually a file
                 const contentType = response.headers.get('Content-Type');
-                if (!contentType || !contentType.includes('text/plain')) {
+                if (!contentType || !contentType.includes('application/pdf')) {
                     console.warn('Unexpected content type:', contentType);
                 }
 
@@ -1730,7 +1856,7 @@
                 
                 // Get filename from Content-Disposition header or use default
                 const contentDisposition = response.headers.get('Content-Disposition');
-                let filename = `benefits-checklist-${new Date().toISOString().split('T')[0].replace(/-/g, '')}.txt`;
+                let filename = `benefits-checklist-${new Date().toISOString().split('T')[0].replace(/-/g, '')}.pdf`;
                 if (contentDisposition) {
                     const filenameMatch = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
                     if (filenameMatch && filenameMatch[1]) {
@@ -1746,7 +1872,7 @@
                 
                 // Hide loading indicator after download starts
                 hideLoading();
-                alert('📄 Text checklist downloaded successfully!');
+                alert('📄 PDF checklist downloaded successfully!');
             } catch (error) {
                 hideLoading();
                 console.error('Checklist download error:', error);
@@ -1880,6 +2006,7 @@ END:VCALENDAR`;
                 programs.clear();
                 conversationStarted = false;
                 currentSituation = null;
+                updateProgramsList(); // Update to show empty state
                 document.getElementById('chatMessages').innerHTML = '';
                 document.getElementById('chatMessages').classList.remove('active');
                 document.getElementById('landingView').classList.remove('hidden');

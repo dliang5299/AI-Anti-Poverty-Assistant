@@ -13,7 +13,7 @@ Opens browser at http://localhost:8000 with demo responses.
 
 ### With Full RAG System (Docker)
 ```bash
-# From project root - requires API keys (see API_KEYS_SETUP.md)
+# From project root - requires API keys configured
 docker-compose up --build
 ```
 - RAG service: http://localhost:8000
@@ -21,10 +21,7 @@ docker-compose up --build
 
 ## Documentation
 
-- **`RUN_LOCALLY.md`** - How to run locally for development
-- **`API_KEYS_SETUP.md`** - Setting up API keys (current: OpenAI + Pinecone)
-- **`AWS_NATIVE_SETUP.md`** - Using 100% AWS services (Bedrock + OpenSearch) - Recommended if you have AWS budget
-- **`AWS_SECRETS_MANAGER_SETUP.md`** - Production deployment to EC2 with Secrets Manager
+For deployment and setup details, see the main project documentation.
 
 ## Architecture
 
@@ -48,6 +45,4 @@ Frontend (HTML) → FastAPI Backend → RAG Service
 
 ## Production Deployment
 
-- **`EC2_DEPLOYMENT_GUIDE.md`** - Complete step-by-step guide for two-instance EC2 deployment
-- **`AWS_SECRETS_MANAGER_SETUP.md`** - Using AWS Secrets Manager for API keys
-- **`AWS_NATIVE_SETUP.md`** - Using 100% AWS services (optional, if migrating from Pinecone)
+For production deployment instructions, see the main project documentation.
