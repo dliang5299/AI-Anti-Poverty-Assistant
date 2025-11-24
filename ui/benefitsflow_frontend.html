@@ -1026,7 +1026,7 @@
 
     <!-- Action Buttons -->
     <div class="action-buttons" id="actionButtons" style="display: none;">
-        <button class="action-btn checklist" id="checklistBtn" onclick="downloadPDF()" title="Download Checklist">
+        <button class="action-btn checklist" id="checklistBtn" onclick="showChecklistPreview()" title="View Checklist">
             📋
         </button>
         <button class="action-btn calendar" id="calendarBtn" onclick="downloadCalendar()" title="Download Calendar">
@@ -1056,10 +1056,9 @@
                 <h2>📋 Your Personalized Checklist</h2>
                 <button class="close-btn" onclick="closeModal('checklistModal')">×</button>
             </div>
-            <div class="modal-body">
-                <p>Based on our conversation, here are the steps you need to take:</p>
+            <div class="modal-body" style="max-height: 70vh; overflow-y: auto;">
                 <div id="checklistContent">
-                    <!-- Checklist items will be loaded here -->
+                    <!-- Checklist items will be loaded here as markdown -->
                 </div>
             </div>
             <div class="modal-footer">
@@ -1673,69 +1672,78 @@
             }
         }
 
-        // Show checklist modal (deprecated - now uses downloadPDF)
-        async function showChecklist() {
-            // Redirect to download function
-            downloadPDF();
-        }
-        
-        // Legacy function for modal display (kept for compatibility)
-        async function showChecklistModal() {
+        // Show checklist preview as markdown
+        async function showChecklistPreview() {
             const modal = document.getElementById('checklistModal');
             const content = document.getElementById('checklistContent');
+            
+            // Show modal first
+            modal.style.display = 'block';
+            content.innerHTML = '<p>Loading your checklist...</p>';
             
             showLoading('Loading checklist preview...', 'Fetching your personalized checklist');
             
             try {
-                // Try to get checklist from API
-                const response = await fetch(`${API_BASE_URL}/download/checklist`, {
+                // Collect all programs mentioned in conversation
+                const allPrograms = Array.from(programs);
+                
+                const requestBody = {
+                    situation: currentSituation || null,
+                    conversation_history: messages.map(msg => ({
+                        role: msg.role,
+                        content: msg.content,
+                        sources: msg.sources || []
+                    })),
+                    programs: allPrograms
+                };
+                
+                // Get checklist preview as markdown
+                const response = await fetch(`${API_BASE_URL}/checklist/preview`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                     },
-                    body: JSON.stringify({
-                        situation: currentSituation,
-                        conversation_history: messages.map(msg => ({
-                            role: msg.role,
-                            content: msg.content
-                        }))
-                    })
+                    body: JSON.stringify(requestBody)
                 });
 
-                if (response.ok) {
-                    const checklistText = await response.text();
-                    content.innerHTML = `<pre style="white-space: pre-wrap; font-family: inherit;">${checklistText}</pre>`;
-                } else {
-                    throw new Error('API not available');
+                if (!response.ok) {
+                    throw new Error(`Server error: ${response.status}`);
                 }
+
+                const data = await response.json();
+                
+                if (!data.has_sufficient_context) {
+                    content.innerHTML = `<div style="padding: 1rem; text-align: center; color: var(--text-muted);">
+                        <p>${data.message || 'Not enough conversation context to generate a personalized checklist.'}</p>
+                        <p style="margin-top: 1rem;">Please have a few more exchanges with the assistant about your specific situation and needs.</p>
+                    </div>`;
+                } else {
+                    // Display markdown using the same formatting function used for chat messages
+                    const markdownHtml = formatMessageText(data.markdown);
+                    content.innerHTML = `<div style="padding: 1rem 0;">${markdownHtml}</div>`;
+                }
+                
                 hideLoading();
             } catch (error) {
                 hideLoading();
-                // Fallback checklist (when API unavailable)
-                content.innerHTML = `
-                    <div style="margin-bottom: 1rem;">
-                        <h4 style="color: var(--primary-color); margin-bottom: 0.5rem;">📄 Gather Required Documents</h4>
-                        <p>• Proof of income (pay stubs from last 30 days)</p>
-                        <p>• Photo ID (Driver's License or State ID)</p>
-                        <p>• Proof of residence (utility bill or lease)</p>
-                        <p>• Social Security numbers for all household members</p>
-                    </div>
-                    <div style="margin-bottom: 1rem;">
-                        <h4 style="color: var(--primary-color); margin-bottom: 0.5rem;">💼 Apply for Benefits</h4>
-                        <p>• Visit BenefitsCal.com for CalFresh and Medi-Cal</p>
-                        <p>• Visit EDD.ca.gov for Unemployment Insurance</p>
-                        <p>• Contact local county office for assistance</p>
-                    </div>
-                    <div style="margin-bottom: 1rem;">
-                        <h4 style="color: var(--primary-color); margin-bottom: 0.5rem;">📞 Follow Up</h4>
-                        <p>• Check application status regularly</p>
-                        <p>• Respond to requests for additional information</p>
-                        <p>• Keep copies of all submitted documents</p>
-                    </div>
-                `;
+                console.error('Checklist preview error:', error);
+                content.innerHTML = `<div style="padding: 1rem; color: var(--warning);">
+                    <p>❌ Error loading checklist preview: ${error.message || 'Unknown error'}</p>
+                    <p style="margin-top: 0.5rem; font-size: 0.9em;">You can still try downloading the PDF directly.</p>
+                </div>`;
             }
-
-            modal.classList.add('active');
+        }
+        
+        // Legacy function for modal display (kept for compatibility)
+        async function showChecklistModal() {
+            showChecklistPreview();
+        }
+        
+        // Show checklist modal (deprecated - now uses showChecklistPreview)
+        async function showChecklist() {
+            showChecklistPreview();
+        }
+        
         }
 
         // Show loading indicator
