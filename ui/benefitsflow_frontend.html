@@ -1678,7 +1678,7 @@
             const content = document.getElementById('checklistContent');
             
             // Show modal first
-            modal.style.display = 'block';
+            modal.classList.add('active');
             content.innerHTML = '<p>Loading your checklist...</p>';
             
             showLoading('Loading checklist preview...', 'Fetching your personalized checklist');
@@ -2002,7 +2002,11 @@ END:VCALENDAR`;
 
         // Close modal
         function closeModal(modalId) {
-            document.getElementById(modalId).classList.remove('active');
+            const modal = document.getElementById(modalId);
+            if (modal) {
+                modal.style.display = 'none';
+                modal.classList.remove('active');
+            }
         }
 
         // Clear chat
