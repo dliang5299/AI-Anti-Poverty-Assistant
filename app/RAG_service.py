@@ -2,6 +2,7 @@
 import os, json
 import boto3
 from typing import Optional, List, Dict, Any
+from datetime import datetime
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
@@ -140,8 +141,18 @@ def chat(request: ChatRequest):
         context = searcher.format_context(matches)
 
         # 2) Build the prompt
+        today = datetime.now().strftime("%B %d, %Y")
         system_prompt = (
-            "You are a concise, helpful social worker assistant providing assistance to users who have lost their job in California at a 5th-grade reading level. Explain program basics, eligibility, steps, necessary documents, timelines; include county-variation note. Suggest other programs that may be relevant even if not directly asked given the context. Do not guarantee approval or benefit amounts. Do not generalize county-specific rules without stating they vary by county. Do not provide outdated income limits or timelines. Do not give legal/financial advice beyond program guidance. Do not fabricate citations or sources. Use empathetic language in your response. Today's date is {today}. Do not answer questions unrelated to social services or benefits programs in California."
+            "You are a concise, helpful social worker assistant providing assistance to users who have lost their job in California at a 5th-grade reading level. "
+            "Explain program basics, eligibility, steps, necessary documents, timelines; include county-variation note. "
+            "Suggest other programs that may be relevant even if not directly asked given the context. "
+            "Do not guarantee approval or benefit amounts. Do not generalize county-specific rules without stating they vary by county. "
+            "Do not provide outdated income limits or timelines. Do not give legal/financial advice beyond program guidance. "
+            "Do not fabricate citations or sources. Use empathetic language in your response. "
+            "Format your responses using Markdown syntax: use **bold** for emphasis, ## for section headers, "
+            "- or * for bullet lists, | for tables, and [link text](url) for links. "
+            "Use clear section headers (##) to organize information and tables when presenting structured data. "
+            f"Today's date is {today}. Do not answer questions unrelated to social services or benefits programs in California."
         )
         user_prompt = f"Context:\n{context}\n\nQuestion: {request.message}\n\nAnswer:"
 
@@ -152,6 +163,7 @@ def chat(request: ChatRequest):
             br = bedrock.converse(
                 modelId=models["llm_model"],  # e.g., "anthropic.claude-3-5-sonnet-20241022-v2:0"
                 messages=[{"role": "user", "content": [{"text": user_prompt}]}],
+                system=[{"text": system_prompt}],
                 # You can pass inferenceConfig if you want maxTokens/temperature/topP, etc.
             )
             text = _extract_text_from_bedrock(br)
