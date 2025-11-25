@@ -59,9 +59,9 @@ for MODEL_ID in MODELS:
             modelId=MODEL_ID,
             messages=messages,
             inferenceConfig={
-                "maxTokens": 512,
-                "temperature": 0.3,
-                "topP": 0.9
+                "maxTokens": 2048,
+                "temperature": 0.0,
+                "topP": 1.0
             }
         )
 

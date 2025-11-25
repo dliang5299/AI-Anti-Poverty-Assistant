@@ -150,6 +150,43 @@ def _ensure_nltk_punkt() -> bool:
 
 
 # ---------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
+# Text cleanup for readability metrics
+# ---------------------------------------------------------------------------
+
+def strip_markdown(text: str) -> str:
+    """Remove common Markdown artifacts to make readability scores saner.
+
+    This is intentionally lightweight: it strips code blocks, inline code,
+    headings, list markers, and table pipes, and collapses whitespace.
+    """
+    if not text:
+        return ""
+
+    # Remove fenced code blocks
+    text = re.sub(r"```.*?```", " ", text, flags=re.DOTALL)
+
+    # Remove inline code backticks
+    text = re.sub(r"`([^`]*)`", r"\1", text)
+
+    # Remove markdown links but keep link text: [text](url) -> text
+    text = re.sub(r"\[([^\]]+)\]\([^\)]+\)", r"\1", text)
+
+    # Drop table pipes and alignment colons
+    text = re.sub(r"\|", " ", text)
+    text = re.sub(r":?-{2,}:?", " ", text)
+
+    # Strip common bullet / heading / quote markers at line starts
+    text = re.sub(r"(?m)^\s{0,3}(?:[#>*+-]|\d+\.)\s+", "", text)
+
+    # Remove leftover emphasis markers
+    text = re.sub(r"[*_~]+", " ", text)
+
+    # Collapse whitespace
+    text = re.sub(r"\s+", " ", text).strip()
+
+    return text
+
 # Readability: Flesch-Kincaid grade level (py-readability-metrics)
 # ---------------------------------------------------------------------------
 
@@ -183,6 +220,29 @@ def _flesch_kincaid_grade(text: str) -> Optional[float]:
         # Short or malformed text, or any library error
         return None
 
+
+def _flesch_reading_ease(text: str) -> Optional[float]:
+    """Compute Flesch Reading Ease using py-readability-metrics.
+
+    Higher is easier to read (roughly: 90-100 very easy, 60-70 standard,
+    30-50 difficult). Returns None if unavailable.
+    """
+    if not text or not text.strip():
+        return None
+
+    if Readability is None:
+        return None
+
+    if not _ensure_nltk_punkt():
+        return None
+
+    try:
+        r = Readability(text)
+        fre = r.flesch()
+        score = fre.score if hasattr(fre, "score") else fre
+        return float(score)
+    except Exception:
+        return None
 
 def _nltk_sentiment(text: str) -> Optional[float]:
     """Return NLTK VADER compound sentiment score in [-1, 1].
@@ -361,11 +421,14 @@ def evaluate_response(
         - bedrock_relevance
         - bedrock_harmfulness
         - bedrock_stereotyping
-        - flesch_kincaid_score
+        - flesch_grade
+        - flesch_reading_ease_score
         - nltk_sentiment
     """
     # Local, deterministic metrics
-    fk_grade = _flesch_kincaid_grade(model_answer)
+    cleaned_answer = strip_markdown(model_answer)
+    fk_grade = _flesch_kincaid_grade(cleaned_answer)
+    fre_stripped = _flesch_reading_ease(cleaned_answer)
     sentiment = _nltk_sentiment(model_answer)
 
     bedrock_metrics = _bedrock_eval(
@@ -378,7 +441,8 @@ def evaluate_response(
     # Merge everything into a single flat dict
     metrics: Dict[str, Any] = {
         **bedrock_metrics,
-        "flesch_kincaid_score": fk_grade,
+        "flesch_grade": fk_grade,
+        "flesch_reading_ease_score": fre_stripped,
         "nltk_sentiment": sentiment,
     }
 

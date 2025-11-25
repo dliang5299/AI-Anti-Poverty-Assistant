@@ -45,6 +45,7 @@ def load_questions_from_gold(
         gold_by_id: DataFrame indexed by id so we can look up gold_context/response
     """
     df_input = pd.read_csv(csv_path)
+    df_input = df_input[df_input['Status'] == "Done"]
     prompts_df = df_input.drop_duplicates(subset=["user_question"], keep="first")
     user_prompts = prompts_df["user_question"].dropna().tolist()
     id_map = dict(zip(prompts_df["user_question"], prompts_df["id"]))
@@ -140,7 +141,7 @@ def main() -> None:
         qid = id_map.get(q, f"Q{i:03d}")
         print(f"[ASK] {qid}: {q}")
 
-        hist_to_send = history if args.with-history else None
+        hist_to_send = history if args.with_history else None
         latency, data, err = call_chat(
             args.api_url,
             q,
