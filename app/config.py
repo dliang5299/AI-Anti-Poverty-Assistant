@@ -91,7 +91,7 @@ def get_regions() -> Dict[str, str]:
     return {
         "s3":      _get_env("S3_REGION", "us-west-2"),
         "pinecone": _get_env("PINECONE_REGION", "us-east-1"),
-        "bedrock": _get_env("BEDROCK_REGION", "us-east-1"),
+        "bedrock": _get_env("BEDROCK_REGION", "us-west-2"),  # Changed to us-west-2 (Oregon)
         "pinecone_env": _get_env("PINECONE_ENV", "aws-us-east-1"),
     }
 
@@ -113,11 +113,39 @@ def get_pinecone_config() -> Dict[str, Any]:
     }
 
 
+@lru_cache(maxsize=1)
+def _get_combined_secrets() -> Dict[str, Any]:
+    """
+    Fetch the combined secret containing both API keys.
+    Falls back to individual secrets if SECRETS_ARN is not set (backward compatibility).
+    """
+    # Try combined secret first
+    combined_secret_arn = _get_env("SECRETS_ARN")
+    if combined_secret_arn:
+        hint = _get_env("SECRETS_REGION") or get_regions()["bedrock"]
+        secret_json = _fetch_secret(combined_secret_arn, hint_region=hint, prefer_key=None)
+        if secret_json:
+            try:
+                return json.loads(secret_json)
+            except json.JSONDecodeError:
+                raise RuntimeError(f"Combined secret at {combined_secret_arn} is not valid JSON.")
+    
+    # Fallback: return empty dict if using individual secrets (handled below)
+    return {}
+
 @lru_cache(maxsize=None)
 def get_openai_api_key() -> str:
+    # Try combined secret first
+    combined_secrets = _get_combined_secrets()
+    if combined_secrets:
+        key = combined_secrets.get("OPENAI_API_KEY")
+        if key:
+            return key
+    
+    # Fallback to individual secret (backward compatibility)
     secret_id = _get_env("OPENAI_API_KEY_SECRET_ARN")
     if not secret_id:
-        raise RuntimeError("OPENAI_API_KEY_SECRET_ARN is required.")
+        raise RuntimeError("Either SECRETS_ARN or OPENAI_API_KEY_SECRET_ARN is required.")
 
     hint = _get_env("OPENAI_SECRET_REGION") or get_regions()["bedrock"]
     key = _fetch_secret(secret_id, hint_region=hint, prefer_key="OPENAI_API_KEY")
@@ -129,9 +157,17 @@ def get_openai_api_key() -> str:
 
 @lru_cache(maxsize=None)
 def get_pinecone_api_key() -> str:
+    # Try combined secret first
+    combined_secrets = _get_combined_secrets()
+    if combined_secrets:
+        key = combined_secrets.get("PINECONE_API_KEY")
+        if key:
+            return key
+    
+    # Fallback to individual secret (backward compatibility)
     secret_id = _get_env("PINECONE_API_KEY_SECRET_ARN")
     if not secret_id:
-        raise RuntimeError("PINECONE_API_KEY_SECRET_ARN is required.")
+        raise RuntimeError("Either SECRETS_ARN or PINECONE_API_KEY_SECRET_ARN is required.")
 
     hint = _get_env("PINECONE_SECRET_REGION") or get_regions()["pinecone"]
     key = _fetch_secret(secret_id, hint_region=hint, prefer_key="PINECONE_API_KEY")
