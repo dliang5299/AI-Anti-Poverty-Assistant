@@ -155,6 +155,24 @@ def main() -> None:
             answer = data.get("response") or ""
             sources = data.get("sources") or []
             programs = data.get("programs") or []
+            # Try to capture the retrieved context if the API returns it or if sources include text
+            retrieved_context = ""
+            raw_context = data.get("context") or data.get("retrieved_context")
+            if raw_context:
+                if isinstance(raw_context, list):
+                    retrieved_context = "\n\n".join(str(c) for c in raw_context if c)
+                else:
+                    retrieved_context = str(raw_context)
+            else:
+                chunk_texts: List[str] = []
+                for s in sources:
+                    if not isinstance(s, dict):
+                        continue
+                    txt = s.get("text") or s.get("content")
+                    if txt:
+                        chunk_texts.append(str(txt))
+                if chunk_texts:
+                    retrieved_context = "\n\n".join(chunk_texts)
 
             # optionally build history for the next turn
             if args.with_history:
@@ -201,6 +219,7 @@ def main() -> None:
                 "answer": answer,
                 "source_urls": json.dumps(urls, ensure_ascii=False),
                 "programs_json": json.dumps(programs, ensure_ascii=False),
+                "retrieved_context": retrieved_context,
                 "status": "ok",
                 "error": "",
                 "latency_ms": latency,
@@ -218,6 +237,7 @@ def main() -> None:
                 "answer": "",
                 "source_urls": json.dumps([], ensure_ascii=False),
                 "programs_json": json.dumps([], ensure_ascii=False),
+                "retrieved_context": "",
                 "status": "error",
                 "error": err or "unknown error",
                 "latency_ms": latency,

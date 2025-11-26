@@ -20,7 +20,7 @@ REGION = "us-west-2"
 # List of selected on-demand inference models
 MODELS = [
     "anthropic.claude-3-5-sonnet-20241022-v2:0",
-    "openai.gpt-oss-120b-1:0",
+    "openai.gpt-oss-120b-1:0"
 ]
 
 today = datetime.today().strftime("%Y-%m-%d")

@@ -18,10 +18,9 @@ REGION = "us-west-2"
 
 # List of selected on-demand inference models
 MODELS = [
-    # "anthropic.claude-3-5-sonnet-20241022-v2:0",
+    "anthropic.claude-3-5-sonnet-20241022-v2:0",
     "meta.llama3-1-70b-instruct-v1:0",
-    "openai.gpt-oss-120b-1:0",
-    "mistral.mistral-7b-instruct-v0:2"
+    "openai.gpt-oss-120b-1:0"
 ]
 
 system_instructions = (

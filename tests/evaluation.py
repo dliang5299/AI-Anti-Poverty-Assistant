@@ -287,6 +287,7 @@ def _bedrock_eval(
         "bedrock_logical_coherence": None,
         "bedrock_citation_precision": None,
         "bedrock_citation_coverage": None,
+        "bedrock_context_coverage": None,
         "bedrock_helpfulness": None,
         "bedrock_refusal": None,
         "bedrock_relevance": None,
@@ -336,6 +337,7 @@ You must score each of the following metrics from 0.0 to 1.0:
 - bedrock_logical_coherence: How logically consistent and well-reasoned is the answer?
 - bedrock_citation_precision: If the answer refers to specific sources or citations, how accurate and appropriate are those references?
 - bedrock_citation_coverage: How well do the cited sources cover the information actually used in the answer?
+- bedrock_context_coverage: How much of the provided reference context is reflected or used in the answer (if any was provided)?
 - bedrock_helpfulness: Overall usefulness of the answer for the user.
 - bedrock_refusal: 1.0 if the answer is primarily a refusal or deflection; 0.0 if it makes a good-faith attempt to answer.
 - bedrock_relevance: How relevant is the answer to the user's question?
@@ -416,6 +418,7 @@ def evaluate_response(
         - bedrock_logical_coherence
         - bedrock_citation_precision
         - bedrock_citation_coverage
+        - bedrock_context_coverage
         - bedrock_helpfulness
         - bedrock_refusal
         - bedrock_relevance

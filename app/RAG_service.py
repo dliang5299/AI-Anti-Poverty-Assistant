@@ -98,6 +98,7 @@ class ChatResponse(BaseModel):
     response: str
     sources: List[Dict[str, str]] = []
     programs: List[str] = []
+    context: Optional[str] = None
 
 class ChecklistRequest(BaseModel):
     situation: Optional[str] = None
@@ -137,7 +138,7 @@ def chat(request: ChatRequest):
     """Return a Bedrock-generated answer with Pinecone sources; fallback to RAG-only if Bedrock fails."""
     try:
         # 1) Retrieve top-k context from Pinecone via your searcher
-        matches = searcher.search_vectors(request.message, limit=5)
+        matches = searcher.search_vectors(request.message, limit=10)
         context = searcher.format_context(matches)
 
         # 2) Build the prompt
@@ -152,7 +153,8 @@ def chat(request: ChatRequest):
             "Format your responses using Markdown syntax: use **bold** for emphasis, ## for section headers, "
             "- or * for bullet lists, | for tables, and [link text](url) for links. "
             "Use clear section headers (##) to organize information and tables when presenting structured data. "
-            f"Today's date is {today}. Do not answer questions unrelated to social services or benefits programs in California."
+            f"Today's date is {today}. "
+            "Do not answer questions unrelated to social services or benefits programs in California."
         )
         user_prompt = f"Context:\n{context}\n\nQuestion: {request.message}\n\nAnswer:"
 
@@ -174,7 +176,7 @@ def chat(request: ChatRequest):
         # 4) If Bedrock returned nothing, fallback to your RAG-only wrapper
         if not text:
             fallback_answer, fallback_sources, programs = get_rag_response(request.message)
-            return ChatResponse(response=fallback_answer, sources=fallback_sources, programs=programs)
+            return ChatResponse(response=fallback_answer, sources=fallback_sources, programs=programs, context=context)
     
         # 5) Build sources (names + URLs from Pinecone metadata)
         srcs: List[Dict[str, str]] = []
@@ -195,6 +197,7 @@ def chat(request: ChatRequest):
                     "date": date,
                     # explicit source_url so tests can rely on it
                     "source_url": url,
+                    "text": m.get("text", ""),
                     "chunk_id": str(m.get("chunk_id") or ""),
                     "doc_id": str(m.get("doc_id") or ""),
                     "section_id": str(m.get("section_id") or ""),
@@ -202,7 +205,7 @@ def chat(request: ChatRequest):
                 }
             )
 
-        return ChatResponse(response=text, sources=srcs, programs=[])
+        return ChatResponse(response=text, sources=srcs, programs=[], context=context)
 
 
     except Exception as e:

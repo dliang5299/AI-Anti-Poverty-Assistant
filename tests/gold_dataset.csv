@@ -276,7 +276,16 @@ More details:
 Citations: [1] https://edd.ca.gov/en/unemployment/ ",Done,Step 1 of EDD Get Your Information in Order was not pulled right - weirdly did languages instead? https://edd.ca.gov/en/unemployment/step-1-get-your-information-in-order/  Included more detailed info on the documents needed ,
 Q_008,easy,"Recently laid-off worker, First-time benefits seeker",eligibility,health coverage,Am I eligible for Medicaid or other healthcare assistance?,"[{""source_url"": ""https://benefitscal.com/Help/program/medical/HCPDE?lang=en""},
 {""source_url"": ""https://www.coveredca.com/get-started/""},
-{""source_url"": ""https://www.coveredca.com/documents-to-confirm-eligibility/""}]","[""## Is Medi-Cal right for my family?\n\n- Medi-Cal provides free or low-cost health care to people who qualify. It can help pay for doctor visits, hospital care, immunization (vaccines), pregnancy-related services, nursing home care, and other services. This includes:"", 
+{""source_url"": ""https://www.coveredca.com/documents-to-confirm-eligibility/""},
+{""source_url"": ""https://www.coveredca.com/documents-to-confirm-eligibility/social-security-number/""},
+{""source_url"": ""https://www.coveredca.com/documents-to-confirm-eligibility/identity/,
+{""source_url"": ""https://www.coveredca.com/documents-to-confirm-eligibility/citizenship/,
+{""source_url"": ""https://www.coveredca.com/documents-to-confirm-eligibility/immigration-status/,
+{""source_url"": ""https://www.coveredca.com/documents-to-confirm-eligibility/income/""},
+{""source_url"": "" https://www.coveredca.com/documents-to-confirm-eligibility/minimum-essential-coverage/""},
+{""source_url"": ""https://www.usa.gov/cobra-health-insurance""},
+{""source_url"": ""https://www.usa.gov/help-with-medical-bills""},
+{""source_url"": ""https://www.consumerfinance.gov/ask-cfpb/is-there-financial-help-for-my-medical-bills-en-2124/""}]","[""## Is Medi-Cal right for my family?\n\n- Medi-Cal provides free or low-cost health care to people who qualify. It can help pay for doctor visits, hospital care, immunization (vaccines), pregnancy-related services, nursing home care, and other services. This includes:"", 
 ""## Who is eligible for Medi-Cal?\n\nMedi-Cal provides free or low-cost health coverage for individuals (adults and children) and families who qualify. To qualify for Medi-Cal, you must live in the state of California and meet certain rules, such as having income under the Medi-Cal limit. If your income is over the Medi-Cal limit, you may still be eligible for help paying for private health care. You may qualify for health insurance even if you are not a U.S. citizen or a U.S. national."", 
 ""## What documents will I need?\n\n- These documents may be helpful when you apply:"", 
 ""## Identity of Applicant\n\n- Birth certificate\n- Driver's license\n- Paycheck\n- School records\n- U.S. Passport\n- U.S. American Indian/Alaska Native Tribal document\n- U.S. military ID\n- Fed, state or local ID\n- Social Security numbers\n- Award letter\n- Medicare card"", 
@@ -292,7 +301,19 @@ Q_008,easy,"Recently laid-off worker, First-time benefits seeker",eligibility,he
 ""## What You’ll Need to Apply\n\n- Knowing the following information before you start can make applying easier. We will confirm your application details with government data or what you’ve shared before.\n- Social Security Numbers\n- For applicants who have them.\n- Federal Tax Information\n- For applicants who file taxes.\n- Immigration Documents\n- For non-citizens.\n- Employer and Income Information\n- For applicants who earn money."", 
 ""## How to Apply\n\n- There are several ways to apply. Each option is free and confidential.\n- schedule Time to complete: 30 minutes\n- check Fastest and most convenient method\n- computer Save your progress to finish any time\n- schedule Time to complete: 1 hour\n- location_on Get free local help\n- language Available in multiple languages\n- Apply by Mail\n- Available in 11 languages. Get your paper application here."", 
 ""## Get a Quote Before Applying\n\n- Still need to compare your options? You can review plans, costs and benefits before starting your application with our Shop and Compare Tool.\n- Shop and Compare Plans""],
-[""## Documents to Confirm Eligibility\n\n- Covered California compares the information you enter on your application with government data sources or information you've provided before. If the data is inconsistent, we ask you to submit documents to confirm the new information.""]","Eligibility depends on many factors. If you tell me more about your household and income status I can be more specific. But here is an overview of what California offers for healthcare assistance. 
+[""## Documents to Confirm Eligibility\n\n- Covered California compares the information you enter on your application with government data sources or information you've provided before. If the data is inconsistent, we ask you to submit documents to confirm the new information.""],
+[""## Proof of Lack of Minimum Essential Coverage (MEC)\n\n- Certificate of coverage or letter from the health insurance company showing the end date of coverage.\n- Government-issued document showing date of termination of health insurance or ineligibility to program.\n- Employer statement indicating no offer of affordable minimum value health insurance through your job.\n- Self-attestation (legally signing a document yourself to confirm its authenticity), where the individual is unable to provide any of the above documents.\n- Submit a copy of one of the following documents.""],
+
+[""## Learn about COBRA insurance and how to get coverage\n\n- COBRA, the Consolidated Omnibus Budget Reconciliation Act, lets qualified workers keep their group health insurance for a limited time after a change in eligibility."", 
+""## How does COBRA insurance work?\n\n- COBRA applies to most private sector businesses with 20 or more employees. It requires an employer's group health insurance plan to continue after qualifying life events. These include:\n- Termination or a reduction of a covered employee's hours\n- Divorce or legal separation from a covered employee\n- Death of a covered employee\n- Medicare eligibility for a covered employee\n- Loss of a child's or dependent's health insurance coverage under the plan\n- Qualified beneficiaries under COBRA include:\n- An employee\n- Spouse\n- Former spouses\n- Dependent children\n- The amount of time COBRA benefits last depends on the qualifying life event you experience. In some cases, it may be for 36 months. If your hours were reduced or your job was terminated, you can receive COBRA benefits for 18 months."", 
+""## Find out if you are eligible for COBRA\n\n- COBRA eligibility has three basic requirements that must be met for you to get a continuation of coverage:\n- Your group health plan must be covered by COBRA.\n- A qualifying event must occur.\n- You must be a qualified beneficiary for that event."", 
+""## How to get COBRA coverage\n\nWhen a qualifying life event happens, you or your employer will notify the health plan. The plan will send an election notice that you will have 60 days to respond to. If you elect to take COBRA coverage, your employer may pay a portion of or the full amount of your insurance premium.\n- Contact your employer’s health insurance plan administrator with questions about COBRA, including:\n- If you currently have COBRA coverage\n- When your COBRA coverage will begin\n- How long the coverage may last""],
+
+[""## More help with medical bills after insurance\n\n- If you already receive coverage from Medicaid, Medicare, ACA Marketplace, or other insurance, additional programs may provide further support.\nMedicare Savings Programs - There are 4 Medicare Savings Programs that may be able to help with Part A and Part B premiums, deductibles, coinsurance, and copayments. Learn more about the Medicare Savings Programs, if you qualify, and how to apply.\n- Medicare Extra Help - This program can help you pay Medicare Part D costs that cover prescription drugs. Find out if you qualify for Extra Help and apply.\nCharity care - If you still need help with medical bills after health insurance or Medicaid payments have been applied, a charity care program may assist you with the remaining costs. In most cases, you can apply for charity care through a doctor or hospital where you are seeking medical treatment. Learn more about charity care and how it works."", 
+""## Get help paying for prescription drugs\n\n- Contact the pharmaceutical companies that make your prescription drugs or devices. Ask them about low-cost options, samples, or discounts.\n- Learn about generic drugs and how they can lower your costs.\n- State social services agencies provide direct assistance to people with limited access to health care. They can offer referrals to local health centers and organizations that may be able to help.\n- If you are eligible for Medicare, you can get help paying for your prescriptions through Medicare Part D.\nTo get prescription coverage if you choose Medicare Part C, be sure to select a Medicare Advantage Plan that offers prescription drug coverage. Learn more about Medicare Part C plans beginning on page 12 of Understanding Medicare Advantage Plans."",
+""## Get help paying medical bills through debt management\n\nIn some cases, you may be able to get help paying your medical bills with a debt management plan. This involves a payment schedule that a credit counselor develops based on your situation. When you make a payment, your money is deposited into an account with the credit counseling organization, which then pays your debt. You may be able to get lower interest rates and certain fees waived to help make it easier to pay off your medical debt. Learn more about debt management and how it works.""],
+
+[""## Steps to take for charity care or financial help with medical bills\n\nAsk for a copy of the hospital’s financial assistance policy up front. By law, the policy must be provided free of charge and must tell you how to apply for help. You can ask whether the policy is available in your preferred language in addition to English.\n- Fill out the application with information about your income, including last year’s tax forms or a current pay stub, and your expenses, including your rent or mortgage payment, utilities, credit cards, and other expenses.\n- Ask your provider how long it takes to process your application for financial assistance, how to get answers to questions about the application, and what happens with your bill in the meantime.\n- Notify any debt collectors trying to collect on the hospital bill that you’re seeking financial assistance for the bill. You can tell them to pause collections while that is pending.\n- Follow up with the service provider and its billing department about the status of your application as necessary.""]","Eligibility depends on many factors. If you tell me more about your household and income status I can be more specific. But here is an overview of what California offers for healthcare assistance. 
 
 For health coverage, California offers Medi-Cal or Medicaid which is free or low-cost health care to people who qualify. For those who make above Medi-Cal income limits, Covered California is another option to get help paying for a private healthcare plan. 
 
@@ -328,16 +349,55 @@ Using and Keeping your coverage:
 **Covered California Details**
 How to apply: Applying online is fastest (takes about 30 minutes) on coveredca.com. You can also get free help locally from a certified enroller or apply by phone (takes abuot 1 hour). You can also complete a paper application and mail it in but processing may take a bit longer. 
 Gathering these documents ahead of time can make the application process go faster: 
-Covered California compares information you put in your application with government data sources. If the data does not match, Covered California will need additional documents from you such as the following: 
-
+Covered California compares information you put in your application with government data sources. If the data does not match, Covered California will need additional documents from you such as the following: proof of income, SSN, identity, citizenship / immigration status, proof of lack of minimum essential health coverage (this can be a certificate from an insurance company showing end date of your previous coverage, an employer statement saying they no longer offer this kind of health coverage, etc.). For the other categories, the types of documents you'd need are similar to Medi-Cal, but let me know if you want me to pull specific document types that could work. 
 
 Eligibility: Anyone can apply for Covered California if you are a California resident and have satisfactory immigration status. If you are already recieving health insurance, you can still get a plan but may not be able to get help covering the plan costs. DACA recipients do not qualify. People who are not lawfully present do not qualify. People over 65 usually do not as well (they are Medicare eligible). 
 
+Temporary COBRA insurance while you transition to Medicaid or Covered CA
+COBRA is another temporary option for health coverage. It applies to most private companies with 20 or more employees. It requires that the employer's group health insurance plan continues after qualifying life events such as: 
+- Termination of reduction in employee hours 
+- Divorce or legal separation from a covered employee
+- Death of an employee
+- Medicare eligibility for a employee
+- Loss of a child or dependent's health coverage under the plan 
+How long do COBRA benefits last? 
+This depends on the qualifying life event. Some times this is 36 months or 3 years. If you are on COBRA because your employer reduced your hours or terminated your job, you could receive COBRA for 18 months or 1.5 years. 
+Eligibility for COBRA: 
+- Your group health plan must be covered by COBRA
+- A qualifying life event must occur 
+- You must be a qualified beneficiary for the event. 
+How to Get COBRA: 
+- Your employer notifies your health plan when a qualifying life event happens.
+- Keep an eye out for an election notice from the health plan - you will have 60 days to respond to it. 
+- If you accept the COBRA coverage, your employer may pay some or the full amount of your monthly premium. 
+If you have questions, you should contact your employer's health insurance plan administrator. 
 
+There are also options for help with medical bills even if you don't have insurance or are under-insured (you have healthcare needs that are not covered by your plan): 
+After applying for Medicaid (Medi-Cal) and ACA Marketplace (Covered California), and you still need help covering health care costs, you can still get help through the following: 
+- Charity care: in most cases, you can apply through the doctor office or hospital where you are seeking medical treatment. 
+---Take these steps: 
+---First, ask for a copy of the hosital or provider's financial assistance policy. 
+---Fill out the application with information about your income and expenses 
+---Ask questions about the process like how long it will take to process your application and what happens to your bill in the meantime
+---Notify debt collectors if they are trying to collect and ask them to pause while that is pending 
+---Follow up with the hospital / provider and its billing department about your application's status as needed. 
+- Medicare has several savings and extra help options - but this only applies if you are Medicare eligible - usually 65 years or older 
+- Debt management: Get on a payment schedule with a credit counselor. You make an account with the credit counseling organization and then pay off your debt as you deposit money. You may get lower interest rates and certain fees waived when going this route. 
+- Prescription costs: You can contact the pharmaceutical companies that make your drugs or devices and ask about low cost options, samples or discounts. See if your drug has a generic version - this is the same forumulation but with a different brand that is usually more affordable. You can also go to your county social service agency to get referrals to local health centers and nonprofits that may be able to help you. 
 
-Citations: https://benefitscal.com/Help/program/medical/HCPDE?lang=en; https://www.coveredca.com/get-started/ 
+Citations: https://benefitscal.com/Help/program/medical/HCPDE?lang=en; https://www.coveredca.com/get-started/; https://www.coveredca.com/documents-to-confirm-eligibility/social-security-number/;  https://www.coveredca.com/documents-to-confirm-eligibility/identity/; https://www.coveredca.com/documents-to-confirm-eligibility/citizenship/; https://www.coveredca.com/documents-to-confirm-eligibility/immigration-status/; https://www.coveredca.com/documents-to-confirm-eligibility/income/; https://www.coveredca.com/documents-to-confirm-eligibility/minimum-essential-coverage/; https://www.usa.gov/cobra-health-insurance; https://www.usa.gov/help-with-medical-bills; https://www.consumerfinance.gov/ask-cfpb/is-there-financial-help-for-my-medical-bills-en-2124/ ",Done,"https://www.coveredca.com/get-started/ the FAQs were not captured 
 
-",,https://www.coveredca.com/get-started/ the FAQs were not captured ,
+https://www.coveredca.com/documents-to-confirm-eligibility/immigration-status/ - issues in JSONL file formatting 
+
+https://www.coveredca.com/pdfs/Welcome-APTC-insert.pdf this is a pdf and did not scrape or below two, but lower priorty 
+https://www.coveredca.com/pdfs/CoverageOptionsFactSheet3-11-20Accessible.pdf 
+https://www.coveredca.com/pdfs/Medicare-CC-Fact-Sheet-English.pdf 
+
+https://www.coveredca.com/learning-center/tax-penalty-details-and-exemptions/penalty/ penalty for not having health insurance - low priority did not scrape
+
+https://www.coveredca.com/support/insurance-company-contacts/ contact insurance company - also low priority 
+
+https://www.dol.gov/sites/dolgov/files/ebsa/about-ebsa/our-activities/resource-center/publications/an-employees-guide-health-benefits-under-cobra-2022.pdf an employee's guide to health benefits under cobra - LOW priority ",
 Q_009,easy,First-time benefits seeker,application_steps,CalWORKs / TANF,Where do I apply for CalWORKs benefits?,"[{""doc_id"": ""62507f22008b13571feb2619acce1797e358b60f6c2705dad2a705f85ac2a691"", ""source_url"": ""https://www.cdss.ca.gov/calworks#main-content""}, 
 {""doc_id"": ""3d466ae5bdaaabbc58ec4a5f4ef58100476cfc8d1fbda3cbc6c408e5bf09fb89"", ""source_url"": ""https://www.cdss.ca.gov/county-offices""}]","[""## What is CalWORKs?\n\n- CalWORKs is a welfare program that gives cash aid and services to eligible California families in need. The program serves all 58 counties in the state and is operated locally by county welfare departments."",""""## Benefits to Build On\n\nIf a family is in need, CalWORKs may be able to help with housing, food, utilities, clothing or medical care, they may be eligible to receive immediate short-term help. Families that apply and qualify for ongoing assistance receive money each month to help pay for housing, food and other necessary expenses.""]","CalWORKs gives cash aid and services to eligible California families in need. This is California's TANF program. It is available in all 58 counties and operated at the county level. 
 
