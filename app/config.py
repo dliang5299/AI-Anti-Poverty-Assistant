@@ -113,32 +113,14 @@ def get_pinecone_config() -> Dict[str, Any]:
     }
 
 
-@lru_cache(maxsize=1)
-def _get_combined_secrets() -> Dict[str, Any]:
-    """
-    Fetch the combined secret containing both API keys.
-    Falls back to individual secrets if SECRETS_ARN is not set (backward compatibility).
-    """
-    # Try combined secret first
+@lru_cache(maxsize=None)
+def get_openai_api_key() -> str:
+    # Try combined secret first (if SECRETS_ARN is set)
     combined_secret_arn = _get_env("SECRETS_ARN")
     if combined_secret_arn:
         hint = _get_env("SECRETS_REGION") or get_regions()["bedrock"]
-        secret_json = _fetch_secret(combined_secret_arn, hint_region=hint, prefer_key=None)
-        if secret_json:
-            try:
-                return json.loads(secret_json)
-            except json.JSONDecodeError:
-                raise RuntimeError(f"Combined secret at {combined_secret_arn} is not valid JSON.")
-    
-    # Fallback: return empty dict if using individual secrets (handled below)
-    return {}
-
-@lru_cache(maxsize=None)
-def get_openai_api_key() -> str:
-    # Try combined secret first
-    combined_secrets = _get_combined_secrets()
-    if combined_secrets:
-        key = combined_secrets.get("OPENAI_API_KEY")
+        # Use Deric's existing _fetch_secret with prefer_key - this works with Key/Value format
+        key = _fetch_secret(combined_secret_arn, hint_region=hint, prefer_key="OPENAI_API_KEY")
         if key:
             return key
     
@@ -157,10 +139,12 @@ def get_openai_api_key() -> str:
 
 @lru_cache(maxsize=None)
 def get_pinecone_api_key() -> str:
-    # Try combined secret first
-    combined_secrets = _get_combined_secrets()
-    if combined_secrets:
-        key = combined_secrets.get("PINECONE_API_KEY")
+    # Try combined secret first (if SECRETS_ARN is set)
+    combined_secret_arn = _get_env("SECRETS_ARN")
+    if combined_secret_arn:
+        hint = _get_env("SECRETS_REGION") or get_regions()["bedrock"]
+        # Use Deric's existing _fetch_secret with prefer_key - this works with Key/Value format
+        key = _fetch_secret(combined_secret_arn, hint_region=hint, prefer_key="PINECONE_API_KEY")
         if key:
             return key
     
