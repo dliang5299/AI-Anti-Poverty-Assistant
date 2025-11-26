@@ -20,6 +20,7 @@ services:
       - LLM_MODEL=${LLM_MODEL:-openai.gpt-oss-120b-1:0}
     ports:
       - "8000:8000"
+    restart: unless-stopped
   ui:
     build:
       context: .
@@ -29,8 +30,11 @@ services:
     volumes:
       - ~/.aws:/root/.aws:ro
     environment:
-      - RAG_API_URL=http://app:8000
+      # For single instance (docker-compose): use service name
+      # For two separate EC2 instances: set RAG_API_URL in docker.env to RAG instance's private IP
+      - RAG_API_URL=${RAG_API_URL:-http://app:8000}
     ports:
       - "8501:8501"
     depends_on:
       - app
+    restart: unless-stopped

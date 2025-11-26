@@ -40,17 +40,21 @@ def main():
         print(f"WARNING: Could not install dependencies: {e}")
     
     # Start FastAPI backend in a separate process
-    print("Starting FastAPI backend...")
+    # Set UI_PORT environment variable so backend runs on 8501 (RAG service uses 8000)
+    env = os.environ.copy()
+    env["UI_PORT"] = "8501"
+    print("Starting FastAPI backend on port 8501 (RAG service uses 8000)...")
     try:
-        backend_process = subprocess.Popen([sys.executable, "fastapi_backend.py"])
+        backend_process = subprocess.Popen([sys.executable, "fastapi_backend.py"], env=env)
         
         # Give FastAPI a moment to start
         time.sleep(3)
         
-        # Check if backend is running
+        # Check if backend is running (UI runs on 8501, RAG on 8000)
+        ui_port = int(os.getenv("UI_PORT", "8501"))
         try:
             import requests
-            response = requests.get("http://localhost:8000/api/health", timeout=5)
+            response = requests.get(f"http://localhost:{ui_port}/api/health", timeout=5)
             if response.status_code == 200:
                 print("FastAPI backend is running successfully.")
             else:
@@ -65,14 +69,16 @@ def main():
         return
     
     # Open the HTML frontend in the browser
+    ui_port = int(os.getenv("UI_PORT", "8501"))
     print("Opening BenefitsFlow in browser...")
     time.sleep(1)  # Give backend a moment to fully start
-    webbrowser.open_new_tab("http://localhost:8000")
+    webbrowser.open_new_tab(f"http://localhost:{ui_port}")
     
     print("\n" + "="*60)
     print("BenefitsFlow Application Status: RUNNING")
-    print(f"Frontend + Backend: http://localhost:8000")
-    print(f"API Documentation: http://localhost:8000/api/docs")
+    print(f"Frontend + Backend: http://localhost:{ui_port}")
+    print(f"API Documentation: http://localhost:{ui_port}/api/docs")
+    print(f"RAG Service (Deric's): http://localhost:8000")
     print("="*60)
     print("\nNotes:")
     print("- The HTML frontend will work even if the API is not running (demo mode)")

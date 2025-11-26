@@ -60,10 +60,15 @@ async def health_check():
     return {"status": "healthy", "message": "BenefitsFlow is running!"}
 
 if __name__ == "__main__":
-    print("Starting BenefitsFlow - Hosted Application")
-    print("Frontend: http://localhost:8000")
-    print("Backend API: http://localhost:8000/api")
-    print("API Documentation: http://localhost:8000/api/docs")
-    print("\nApplication is now properly hosted and ready for use.")
+    # AWS Deployment: UI runs on port 8501 (RAG service uses 8000)
+    # Port matches docker-compose.yml and Dockerfile.ui
+    ui_port = int(os.getenv("UI_PORT", "8501"))
+    rag_url = os.getenv("RAG_SERVICE_URL") or os.getenv("RAG_API_URL") or "http://app:8000"
+    print("🚀 [AWS] Starting BenefitsFlow - Hosted Application")
+    print(f"🌐 Frontend: http://0.0.0.0:{ui_port}")
+    print(f"🔌 Backend API: http://0.0.0.0:{ui_port}/api")
+    print(f"📚 API Documentation: http://0.0.0.0:{ui_port}/api/docs")
+    print(f"🔗 RAG service expected at: {rag_url}")
+    print(f"✅ Application ready for AWS deployment")
     
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run(app, host="0.0.0.0", port=ui_port)
