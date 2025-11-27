@@ -16,8 +16,10 @@ a pandas.DataFrame row.
 from __future__ import annotations
 
 import json
+import math
 import os
 import re
+import sys
 from typing import Any, Dict, Optional
 
 import boto3
@@ -25,6 +27,14 @@ import boto3
 from readability import Readability
 import nltk
 from nltk.sentiment import SentimentIntensityAnalyzer
+
+from openai import OpenAI, AsyncOpenAI
+
+from ragas.metrics.collections import AnswerAccuracy
+from ragas.llms import llm_factory
+
+from dotenv import load_dotenv
+load_dotenv()  # populate env vars from local .env for secret ARN or API key
 
 # ---------------------------------------------------------------------------
 # Helpers: Bedrock client & NLTK sentiment
@@ -34,6 +44,7 @@ _BEDROCK_CLIENT = None
 _SIA = None
 _PUNKT_READY = False
 _FALLBACK_SENT_PATCHED = False
+_NVIDIA_ACCURACY_SCORER = None
 
 
 def _get_bedrock_client():
@@ -59,6 +70,46 @@ def _get_bedrock_client():
     _BEDROCK_CLIENT = boto3.client("bedrock-runtime", region_name=region)
     return _BEDROCK_CLIENT
 
+def _secret_region(secret_id: str) -> str:
+    """Get region from ARN or fall back to env/AWS defaults."""
+    m = re.match(r"^arn:aws:secretsmanager:([a-z0-9-]+):\\d+:secret:", secret_id or "")
+    return (
+        m.group(1)
+        if m
+        else os.environ.get("OPENAI_SECRET_REGION")
+        or os.environ.get("AWS_REGION")
+        or os.environ.get("AWS_DEFAULT_REGION")
+        or "us-west-2"
+    )
+
+def fetch_openai_key() -> str:
+    """
+    Retrieve the OpenAI key from AWS Secrets Manager.
+    Falls back to OPENAI_API_KEY env var for local runs.
+    """
+    secret_id = os.environ.get("OPENAI_API_KEY_SECRET_ARN")
+    if secret_id:
+        sm = boto3.client("secretsmanager", region_name=_secret_region(secret_id))
+        resp = sm.get_secret_value(SecretId=secret_id)
+        val = resp.get("SecretString") or resp.get("SecretBinary")
+        if isinstance(val, (bytes, bytearray)):
+            val = val.decode("utf-8", errors="ignore")
+        if isinstance(val, str):
+            try:
+                obj = json.loads(val)
+                for k in ("OPENAI_API_KEY", "api_key", "token", "key"):
+                    if isinstance(obj.get(k), str) and obj[k]:
+                        return obj[k]
+            except json.JSONDecodeError:
+                return val
+            if val:
+                return val
+        raise RuntimeError("Could not decode OpenAI key from secret.")
+
+    env_key = os.environ.get("OPENAI_API_KEY")
+    if env_key:
+        return env_key
+    raise RuntimeError("OPENAI_API_KEY_SECRET_ARN or OPENAI_API_KEY is required.")
 
 def _get_sia():
     """Return a (cached) NLTK VADER sentiment analyzer if available."""
@@ -261,6 +312,94 @@ def _nltk_sentiment(text: str) -> Optional[float]:
 
 
 # ---------------------------------------------------------------------------
+# NVIDIA Answer Accuracy (ragas)
+# ---------------------------------------------------------------------------
+
+
+def _get_nvidia_answer_accuracy_scorer():
+    """
+    Lazily construct a ragas AnswerAccuracy scorer.
+
+    This uses an OpenAI-compatible client with the key pulled via
+    config.get_openai_api_key() (OPENAI_API_KEY_SECRET_ARN in .env). Model is
+    set to gpt-4o-mini by default.
+    """
+    global _NVIDIA_ACCURACY_SCORER
+
+    if _NVIDIA_ACCURACY_SCORER is not None:
+        return _NVIDIA_ACCURACY_SCORER
+
+    try:
+        # ragas' AnswerAccuracy expects an Instructor-style LLM, not a raw model
+        # object. llm_factory wraps the OpenAI client with the required interface.
+        # AnswerAccuracy uses async calls (agenerate), so use AsyncOpenAI client
+        client = AsyncOpenAI(api_key=fetch_openai_key())  # respects OPENAI_BASE_URL too
+        llm = llm_factory(model="gpt-4o-mini", client=client)
+        _NVIDIA_ACCURACY_SCORER = AnswerAccuracy(llm=llm)
+    except Exception:
+        _NVIDIA_ACCURACY_SCORER = None
+
+    return _NVIDIA_ACCURACY_SCORER
+
+
+def _log_eval_debug(msg: str) -> None:
+    """Print debug info when EVAL_DEBUG is truthy."""
+    if os.environ.get("EVAL_DEBUG", "").lower() in {"1", "true", "yes"}:
+        print(f"[EVAL][nvidia_answer_accuracy] {msg}", file=sys.stderr)
+
+
+def _nvidia_answer_accuracy(
+    user_prompt: str, model_answer: str, gold_response: Optional[str]
+) -> Optional[float]:
+    """
+    Score answer accuracy using ragas' NVIDIA metric.
+
+    Returns a value in [0, 1] or None if dependencies/configuration are missing.
+    Requires a reference answer (gold_response) to compare against.
+    """
+    if gold_response is None or not str(gold_response).strip():
+        return None
+
+    scorer = _get_nvidia_answer_accuracy_scorer()
+    if scorer is None:
+        _log_eval_debug("scorer unavailable (missing key or client init failure)")
+        return None
+
+    try:
+        result = scorer.score(
+            user_input=user_prompt, response=model_answer, reference=gold_response
+        )
+
+        if hasattr(result, "value"):
+            val = float(result.value)
+            if math.isnan(val):
+                _log_eval_debug(
+                    f"score returned NaN; reason={getattr(result, 'reason', 'unknown')}"
+                )
+                return None
+            return val
+        if isinstance(result, (int, float)):
+            val = float(result)
+            if math.isnan(val):
+                _log_eval_debug("score returned NaN (numeric)")
+                return None
+            return val
+        if isinstance(result, dict) and "value" in result:
+            val = result.get("value")
+            if isinstance(val, (int, float)):
+                val = float(val)
+                if math.isnan(val):
+                    _log_eval_debug("score returned NaN (dict payload)")
+                    return None
+                return val
+    except Exception as e:
+        _log_eval_debug(f"scoring error: {e}")
+        return None
+
+    return None
+
+
+# ---------------------------------------------------------------------------
 # Bedrock LLM-as-a-judge evaluation
 # ---------------------------------------------------------------------------
 
@@ -424,6 +563,7 @@ def evaluate_response(
         - bedrock_relevance
         - bedrock_harmfulness
         - bedrock_stereotyping
+        - nvidia_answer_accuracy
         - flesch_grade
         - flesch_reading_ease_score
         - nltk_sentiment
@@ -433,6 +573,11 @@ def evaluate_response(
     fk_grade = _flesch_kincaid_grade(cleaned_answer)
     fre_stripped = _flesch_reading_ease(cleaned_answer)
     sentiment = _nltk_sentiment(model_answer)
+    nvidia_answer_accuracy = _nvidia_answer_accuracy(
+        user_prompt=user_prompt,
+        model_answer=model_answer,
+        gold_response=gold_response,
+    )
 
     bedrock_metrics = _bedrock_eval(
         user_prompt=user_prompt,
@@ -444,6 +589,7 @@ def evaluate_response(
     # Merge everything into a single flat dict
     metrics: Dict[str, Any] = {
         **bedrock_metrics,
+        "nvidia_answer_accuracy": nvidia_answer_accuracy,
         "flesch_grade": fk_grade,
         "flesch_reading_ease_score": fre_stripped,
         "nltk_sentiment": sentiment,

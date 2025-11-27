@@ -100,7 +100,7 @@ def get_regions() -> Dict[str, str]:
 def get_models() -> Dict[str, str]:
     return {
         "embed_model": _get_env("EMBED_MODEL", "text-embedding-3-small"),
-        "llm_model": _get_env("LLM_MODEL", "meta.llama3-1-70b-instruct-v1:0"),
+        "llm_model": _get_env("LLM_MODEL", "openai.gpt-oss-120b-1:0"),
     }
 
 
