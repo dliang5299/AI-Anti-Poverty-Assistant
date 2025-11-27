@@ -10,7 +10,7 @@ env/
 venv/
 
 # macOS system files
-.DS_Store
+*.DS_Store
 .vscode
 
 # Environment variables & secrets
