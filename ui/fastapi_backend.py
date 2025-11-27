@@ -42,11 +42,21 @@ from metrics import (
 )
 
 # Deric's RAG Service URL
-# In Docker: use service name "api" (from docker-compose.yml)
-# Locally: use "localhost"
-# On EC2: use private IP or service name
+# AWS Deployment (two separate EC2 instances):
+#   - Use RAG instance's PRIVATE IP: http://10.0.1.xxx:8000 (recommended, free, stable)
+#   - Or use RAG instance's public IP: http://x.x.x.x:8000 (not recommended, changes on restart)
+# AWS Deployment (single instance with docker-compose): use service name "app" -> http://app:8000
+# Local dev: use "localhost" -> http://localhost:8000
 # Check both RAG_SERVICE_URL and RAG_API_URL for compatibility
 RAG_SERVICE_URL = os.getenv("RAG_SERVICE_URL") or os.getenv("RAG_API_URL") or "http://localhost:8000"
+
+# Debug: Print RAG service URL on startup to help diagnose connection issues
+print(f"🔍 [AWS DEBUG] RAG_SERVICE_URL configured as: {RAG_SERVICE_URL}")
+print(f"🔍 [AWS DEBUG] RAG_SERVICE_URL env var: {os.getenv('RAG_SERVICE_URL')}")
+print(f"🔍 [AWS DEBUG] RAG_API_URL env var: {os.getenv('RAG_API_URL')}")
+if not os.getenv("RAG_SERVICE_URL") and not os.getenv("RAG_API_URL"):
+    print(f"⚠️ [AWS WARNING] No RAG_SERVICE_URL or RAG_API_URL set! Using default: {RAG_SERVICE_URL}")
+    print(f"⚠️ [AWS WARNING] For AWS deployment, set RAG_API_URL=http://app:8000 in docker-compose.yml or environment")
 
 # Activity tracking file (for EC2 auto-stop)
 ACTIVITY_FILE = Path("/tmp/benefitsflow-last-activity.txt")
@@ -138,10 +148,11 @@ async def chat_endpoint(request: ChatRequest):
     try:
         # Try to call Deric's RAG service first
         try:
-            rag_start = time.time()
-            async with httpx.AsyncClient(timeout=30.0) as client:
-                response = await client.post(
-                    f"{RAG_SERVICE_URL}/chat",
+                rag_start = time.time()
+                print(f"🔍 [DEBUG] Attempting to connect to RAG service at: {RAG_SERVICE_URL}/chat")
+                async with httpx.AsyncClient(timeout=30.0) as client:
+                    response = await client.post(
+                        f"{RAG_SERVICE_URL}/chat",
                     json={
                         "message": request.message,
                         "situation": request.situation,
@@ -151,6 +162,7 @@ async def chat_endpoint(request: ChatRequest):
                 response.raise_for_status()
                 rag_result = response.json()
                 rag_time_ms = int((time.time() - rag_start) * 1000)
+                print(f"✅ [SUCCESS] Connected to RAG service! Response time: {rag_time_ms}ms")
                 
                 result = ChatResponse(
                     response=rag_result["response"],
@@ -160,7 +172,10 @@ async def chat_endpoint(request: ChatRequest):
         except (httpx.RequestError, httpx.HTTPStatusError) as e:
             # Fallback to demo RAG if Deric's service is unavailable
             error_type = type(e).__name__
-            print(f"Warning: RAG service unavailable ({RAG_SERVICE_URL}), using fallback: {str(e)}")
+            print(f"⚠️ [WARNING] RAG service unavailable at {RAG_SERVICE_URL}")
+            print(f"⚠️ [WARNING] Error type: {error_type}")
+            print(f"⚠️ [WARNING] Error details: {str(e)}")
+            print(f"⚠️ [WARNING] Using fallback demo RAG responses")
             response_text, sources, programs = get_rag_response(
                 request.message, 
                 request.conversation_history, 
@@ -846,6 +861,31 @@ async def health_check():
     """
     return {"status": "healthy", "timestamp": datetime.now().isoformat()}
 
+@app.get("/health/rag")
+async def rag_health_check():
+    """
+    Check if RAG service is accessible
+    """
+    try:
+        async with httpx.AsyncClient(timeout=5.0) as client:
+            response = await client.get(f"{RAG_SERVICE_URL}/health")
+            response.raise_for_status()
+            rag_status = response.json()
+            return {
+                "status": "connected",
+                "rag_service_url": RAG_SERVICE_URL,
+                "rag_service_status": rag_status,
+                "timestamp": datetime.now().isoformat()
+            }
+    except Exception as e:
+        return {
+            "status": "disconnected",
+            "rag_service_url": RAG_SERVICE_URL,
+            "error": str(e),
+            "error_type": type(e).__name__,
+            "timestamp": datetime.now().isoformat()
+        }
+
 @app.get("/admin/stats")
 async def get_stats(days: int = 30):
     """
@@ -902,4 +942,9 @@ async def export_report():
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    # AWS Deployment: UI runs on port 8501, RAG service on port 8000
+    # Port is configured in docker-compose.yml or can be overridden with UI_PORT env var
+    ui_port = int(os.getenv("UI_PORT", "8501"))
+    print(f"🚀 [AWS] Starting UI backend on port {ui_port}")
+    print(f"🔗 [AWS] RAG service expected at: {RAG_SERVICE_URL}")
+    uvicorn.run(app, host="0.0.0.0", port=ui_port)

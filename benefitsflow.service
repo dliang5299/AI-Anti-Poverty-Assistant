@@ -1,0 +1,17 @@
+[Unit]
+Description=BenefitsFlow Docker Compose Services
+Requires=docker.service
+After=docker.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+WorkingDirectory=/home/ubuntu/AI-Anti-Poverty-Assistant
+ExecStart=/home/ubuntu/AI-Anti-Poverty-Assistant/startup.sh
+ExecStop=/usr/local/bin/docker-compose -f /home/ubuntu/AI-Anti-Poverty-Assistant/docker-compose.yml down
+User=ubuntu
+Group=ubuntu
+
+[Install]
+WantedBy=multi-user.target
+
