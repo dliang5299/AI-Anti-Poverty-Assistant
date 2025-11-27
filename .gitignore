@@ -11,6 +11,7 @@ venv/
 
 # macOS system files
 .DS_Store
+.vscode
 
 # Environment variables & secrets
 .env
