@@ -290,12 +290,14 @@ Programs Mentioned: {', '.join(user_context.get('programs', []))}
 
 4. **IGNORE** generic holiday/closing dates unless the user specifically asked about them
 
-**Event Format:**
+**Event Format - ORGANIZE BY DATE:**
 Each event should be a JSON object with:
-- "summary": string (clear, actionable title, e.g., "Apply for Unemployment Insurance" or "Covered California Open Enrollment Starts")
-- "description": string (what to do, why it's important, helpful tips. Be specific and encouraging)
-- "start_date": string (YYYY-MM-DD format)
+- "summary": string (clear, actionable title with deadline if applicable, e.g., "Apply for Unemployment Insurance - File Today" or "Covered California Open Enrollment Starts (Nov 1)")
+- "description": string (what to do, why it's important, deadline info, helpful tips. Be specific and encouraging. Keep it concise - max 200 characters)
+- "start_date": string (YYYY-MM-DD format - organize events chronologically)
 - "url": string (relevant website if available)
+
+**IMPORTANT: Organize events by date chronologically. Put urgent/soonest dates first.**
 
 **Examples of helpful events:**
 - {{"summary": "Apply for Unemployment Insurance", "description": "File your UI claim as soon as possible. It takes about 3 weeks to process, so the sooner you apply, the sooner you'll receive benefits. Gather your Social Security number, last day worked, and employer information.", "start_date": "{today_str}", "url": "https://edd.ca.gov/Unemployment/"}}
@@ -311,7 +313,7 @@ Each event should be a JSON object with:
             modelId=LLM_MODEL,
             messages=[{"role": "user", "content": [{"text": user_prompt}]}],
             system=[{"text": system_prompt}],
-            inferenceConfig={"maxTokens": 1500, "temperature": 0.3}
+            inferenceConfig={"maxTokens": 3000, "temperature": 0.3}  # Increased for longer responses
         )
         
         text = _extract_text_from_bedrock(response)
@@ -330,6 +332,18 @@ Each event should be a JSON object with:
             if text.endswith("```"):
                 text = text[:-3]
             text = text.strip()
+            
+            # Try to fix truncated JSON (if response was cut off)
+            if not text.endswith("]") and "[" in text:
+                # Find the last complete event
+                last_complete_event = text.rfind("}")
+                if last_complete_event > 0:
+                    # Try to extract up to the last complete event
+                    potential_json = text[:last_complete_event + 1]
+                    # Try to close the array
+                    if potential_json.count("{") == potential_json.count("}"):
+                        text = potential_json + "\n]"
+                        print(f"⚠️ JSON was truncated, attempting to fix by closing last complete event")
             
             events = json.loads(text)
             
