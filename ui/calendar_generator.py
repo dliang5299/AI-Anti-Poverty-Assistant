@@ -219,24 +219,30 @@ Focus on application deadlines, renewal dates, SAR-7 deadlines, open enrollment 
         
         rag_section = f"\nRelevant Program Information (from RAG):\n{context_text[:2000]}" if context_text else ""
         
-        user_prompt = f"""Based on this conversation and relevant program information, create calendar events for important dates and deadlines.
+        user_prompt = f"""Based on this conversation, create calendar events for important dates and deadlines mentioned by the user.
 
 Today's date: {today_str} (year: {current_year})
 
-**PRIMARY SOURCE - CONVERSATION (READ THIS FIRST):**
+**CONVERSATION (THIS IS YOUR PRIMARY SOURCE - EXTRACT DATES FROM HERE):**
 {conversation_text}
 
-**SECONDARY SOURCE - PROGRAM INFORMATION (for context only):**
+**ADDITIONAL PROGRAM CONTEXT (use only if conversation mentions these programs):**
 {rag_section}
 
 User Situation: {user_context.get('situation', 'General')}
 Programs Mentioned: {', '.join(user_context.get('programs', []))}
 
-**CRITICAL INSTRUCTIONS:**
-1. PRIORITIZE dates mentioned in the CONVERSATION above - these are the user's specific needs
-2. IGNORE generic holiday/closing dates unless specifically mentioned in the conversation
-3. Focus on application deadlines, enrollment periods, and time-sensitive actions mentioned in the conversation
-4. Extract ALL dates mentioned in the conversation. Examples:
+**CRITICAL INSTRUCTIONS - READ CAREFULLY:**
+1. **ONLY extract dates that are EXPLICITLY mentioned in the CONVERSATION above**
+2. **DO NOT create events for generic holidays, office closures, or dates not mentioned in the conversation**
+3. **IGNORE any holiday/closing date information from the program context unless the user specifically asked about it**
+4. Focus ONLY on:
+   - Application deadlines mentioned in conversation
+   - Enrollment periods mentioned in conversation (e.g., "Nov 1 – Jan 31")
+   - Time-sensitive actions mentioned in conversation (e.g., "60 days from job loss")
+   - Deadlines the user asked about
+
+**Extract dates from conversation. Examples:**
 - "Nov 1 – Jan 31" → Create events for November 1 ({current_year}-11-01) and January 31 ({next_year}-01-31)
 - "60 days from job loss" → If job loss mentioned, calculate 60 days from today or mentioned date
 - "Open enrollment Nov 1 – Jan 31" → Create events for both dates
@@ -249,12 +255,16 @@ Generate a JSON array of calendar events. Each event should be a JSON object wit
 - "start_date": string (YYYY-MM-DD format, use {current_year} or {next_year} as appropriate)
 - "url": string (website URL if available, e.g., "https://www.coveredca.com" for Covered California)
 
-Return ONLY valid JSON array, no other text. Example format:
+**IMPORTANT: If the conversation does not mention specific dates, return an empty array: []**
+
+Return ONLY valid JSON array, no other text. Example format (only if dates are mentioned in conversation):
 [
   {{"summary": "Covered California Open Enrollment Starts", "description": "Open enrollment period begins for health insurance coverage. Apply at coveredca.com", "start_date": "{current_year}-11-01", "url": "https://www.coveredca.com"}},
   {{"summary": "Covered California Open Enrollment Ends", "description": "Last day to enroll in health insurance for coverage starting February 1", "start_date": "{next_year}-01-31", "url": "https://www.coveredca.com"}},
   {{"summary": "File Unemployment Insurance Claim", "description": "File your unemployment insurance claim as soon as possible after job loss", "start_date": "{today_str}", "url": "https://www.edd.ca.gov"}}
-]"""
+]
+
+If no specific dates are mentioned in the conversation, return: []"""
         
         # Call Bedrock
         bedrock = get_bedrock()
