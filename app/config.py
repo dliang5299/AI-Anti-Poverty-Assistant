@@ -101,6 +101,7 @@ def get_models() -> Dict[str, str]:
     return {
         "embed_model": _get_env("EMBED_MODEL", "text-embedding-3-small"),
         "llm_model": _get_env("LLM_MODEL", "openai.gpt-oss-120b-1:0"),
+        "bedrock_rerank_model": _get_env("BEDROCK_RERANK_MODEL", "cohere.rerank-v3-5:0"),
     }
 
 
@@ -115,19 +116,15 @@ def get_pinecone_config() -> Dict[str, Any]:
 
 @lru_cache(maxsize=None)
 def get_openai_api_key() -> str:
-    # Try combined secret first (if SECRETS_ARN is set)
-    combined_secret_arn = _get_env("SECRETS_ARN")
-    if combined_secret_arn:
-        hint = _get_env("SECRETS_REGION") or get_regions()["bedrock"]
-        # Use Deric's existing _fetch_secret with prefer_key - this works with Key/Value format
-        key = _fetch_secret(combined_secret_arn, hint_region=hint, prefer_key="OPENAI_API_KEY")
-        if key:
-            return key
-    
-    # Fallback to individual secret (backward compatibility)
+    # Prefer direct env for local/dev convenience
+    direct_key = _get_env("OPENAI_API_KEY")
+    if direct_key:
+        return direct_key
+
+    # Otherwise use the dedicated secret
     secret_id = _get_env("OPENAI_API_KEY_SECRET_ARN")
     if not secret_id:
-        raise RuntimeError("Either SECRETS_ARN or OPENAI_API_KEY_SECRET_ARN is required.")
+        raise RuntimeError("OPENAI_API_KEY_SECRET_ARN is required.")
 
     hint = _get_env("OPENAI_SECRET_REGION") or get_regions()["bedrock"]
     key = _fetch_secret(secret_id, hint_region=hint, prefer_key="OPENAI_API_KEY")
@@ -139,19 +136,15 @@ def get_openai_api_key() -> str:
 
 @lru_cache(maxsize=None)
 def get_pinecone_api_key() -> str:
-    # Try combined secret first (if SECRETS_ARN is set)
-    combined_secret_arn = _get_env("SECRETS_ARN")
-    if combined_secret_arn:
-        hint = _get_env("SECRETS_REGION") or get_regions()["bedrock"]
-        # Use Deric's existing _fetch_secret with prefer_key - this works with Key/Value format
-        key = _fetch_secret(combined_secret_arn, hint_region=hint, prefer_key="PINECONE_API_KEY")
-        if key:
-            return key
-    
-    # Fallback to individual secret (backward compatibility)
+    # Prefer direct env for local/dev convenience
+    direct_key = _get_env("PINECONE_API_KEY")
+    if direct_key:
+        return direct_key
+
+    # Otherwise use the dedicated secret
     secret_id = _get_env("PINECONE_API_KEY_SECRET_ARN")
     if not secret_id:
-        raise RuntimeError("Either SECRETS_ARN or PINECONE_API_KEY_SECRET_ARN is required.")
+        raise RuntimeError("PINECONE_API_KEY_SECRET_ARN is required.")
 
     hint = _get_env("PINECONE_SECRET_REGION") or get_regions()["pinecone"]
     key = _fetch_secret(secret_id, hint_region=hint, prefer_key="PINECONE_API_KEY")

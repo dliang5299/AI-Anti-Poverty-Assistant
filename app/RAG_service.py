@@ -138,7 +138,8 @@ def chat(request: ChatRequest):
     """Return a Bedrock-generated answer with Pinecone sources; fallback to RAG-only if Bedrock fails."""
     try:
         # 1) Retrieve top-k context from Pinecone via your searcher
-        matches = searcher.search_vectors(request.message, limit=10)
+        initial_matches = searcher.search_vectors(request.message, limit=30)
+        matches = searcher.rerank_matches(request.message, initial_matches, top_n=15)
         context = searcher.format_context(matches)
 
         # 2) Build the prompt

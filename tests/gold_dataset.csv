@@ -1637,13 +1637,27 @@ Citations: https://www.getcalfresh.org/en; https://www.getcalfresh.org/en/faq'; 
 https://www.calworks.org/eligibility-process did not scrape Eligibility dropdowns or below ""Application Process"" the 1, 2, 3 steps to gather documents, apply in person or online, and wait for a call or interview 
 
 Step 1 to Step 8 of EDD Get Your Information in Order was not pulled right - weirdly did languages instead? https://edd.ca.gov/en/unemployment/step-1-get-your-information-in-order/  Included more detailed info on the documents needed and ways to apply and recertification requirements ",
-Q_023,medium,Part-time / gig worker,multi_intent,"health coverage, unemployment benefits",I’m getting a severance and might do part-time gig work. Can I still get unemployment and also Medi-Cal?,"{""source_url"": ""https://edd.ca.gov/en/unemployment/""},","[""""Have a Social Security number.\n- Have authorization to work in the United States (if not a US citizen).\n- Have earned enough wages during a specific period of time based on your earnings over the past 18 months. This is called the base period. See How Unemployment Insurance Benefits Are Computed (DE8714AB) (PDF).\n- Totally or partially unemployed.\n- Unemployed through no fault of your own.\n- Physically able to work.\n- Available for work.\n- Looking for work each week.\n- Ready and willing to accept work right away.\nUnemployment benefits are temporary income for eligible workers who lost their job (or had hours reduced) through no fault of their own. You get from $40 to $450 each week, depending on how much you earned in the past 18 months. Our Unemployment Benefit Calculator helps estimate your benefit amount. It takes about three weeks to process your benefit application and make the first payment. To avoid confusion, please carefully read all emails and mail communications we send you. Contact us to fix any errors right away.\n- You may also be able to attend school or training while receiving unemployment benefits. Learn more about California Training Benefits.\n- To receive benefits, you must meet all of the following requirements:\n- If you are unsure if you are eligible to receive unemployment benefits, apply. We will let you know if you meet eligibility requirements.""""]","Yes, you might be able to get both. Make sure to include the income you get from unemployment benefits and severance when you apply for Medi-Cal. As long as you still meet Medi-Cal income requirements, you can get both. 
+Q_023,medium,Part-time / gig worker,multi_intent,"health coverage, unemployment benefits",I’m getting a severance and might do part-time gig work. Can I still get unemployment and also Medi-Cal?,"[{""source_url"": ""https://edd.ca.gov/en/unemployment/""},
+{""source_url"": ""https://benefitscal.com/Help/program/medical/HCPDE?lang=en""}]","[""""Have a Social Security number.\n- Have authorization to work in the United States (if not a US citizen).\n- Have earned enough wages during a specific period of time based on your earnings over the past 18 months. This is called the base period. See How Unemployment Insurance Benefits Are Computed (DE8714AB) (PDF).\n- Totally or partially unemployed.\n- Unemployed through no fault of your own.\n- Physically able to work.\n- Available for work.\n- Looking for work each week.\n- Ready and willing to accept work right away.\nUnemployment benefits are temporary income for eligible workers who lost their job (or had hours reduced) through no fault of their own. You get from $40 to $450 each week, depending on how much you earned in the past 18 months. Our Unemployment Benefit Calculator helps estimate your benefit amount. It takes about three weeks to process your benefit application and make the first payment. To avoid confusion, please carefully read all emails and mail communications we send you. Contact us to fix any errors right away.\n- You may also be able to attend school or training while receiving unemployment benefits. Learn more about California Training Benefits.\n- To receive benefits, you must meet all of the following requirements:\n- If you are unsure if you are eligible to receive unemployment benefits, apply. We will let you know if you meet eligibility requirements.""""],
 
-Here's information about both: 
+[""## Is Medi-Cal right for my family?\n\n- Medi-Cal provides free or low-cost health care to people who qualify. It can help pay for doctor visits, hospital care, immunization (vaccines), pregnancy-related services, nursing home care, and other services. This includes:"", 
+""## Who is eligible for Medi-Cal?\n\nMedi-Cal provides free or low-cost health coverage for individuals (adults and children) and families who qualify. To qualify for Medi-Cal, you must live in the state of California and meet certain rules, such as having income under the Medi-Cal limit. If your income is over the Medi-Cal limit, you may still be eligible for help paying for private health care. You may qualify for health insurance even if you are not a U.S. citizen or a U.S. national."", 
+""## What documents will I need?\n\n- These documents may be helpful when you apply:"", 
+""## Identity of Applicant\n\n- Birth certificate\n- Driver's license\n- Paycheck\n- School records\n- U.S. Passport\n- U.S. American Indian/Alaska Native Tribal document\n- U.S. military ID\n- Fed, state or local ID\n- Social Security numbers\n- Award letter\n- Medicare card"", 
+""## Immigration Status\n\n- INS Documents\n- Immigration papers/forms/cards (copy of both sides)\n- Certificate of naturalization\n- Other proof from immigration (USCIS), such as: work authorization, letter of decision or court order on your case, etc.\n- Note: All documents and forms will be verified through the Systematic Alien Verification for Entitlement (SAVE)"", 
+""## Proof you live in California\n\n- Driver's license\n- Check stub\n- Rent or mortgage receipt\n- Utility bill\n- School, government, or any document showing a California address"", 
+""## Money You Earn\n\n- Dated check stubs for the last 30 days\n- Statement from your employer\n- Copy of last year's tax return\n- Bank statement showing direct deposit"", 
+""## Other Income\n\n- A current benefit check\n- Copies of child support checks\n- Alimony checks\n- Award letters"", 
+""## Resources\n\n- Bank statements showing savings and checking accounts\n- Mortgage statements\n- Life insurance policies\n- Statements of stocks, bonds, or certificates of deposit (CDs)\n- Trust documents\n- Vehicle registration\n- Department of Motor Vehicle registration certificate\n- Medical bills"", 
+""## Additional Proof for Health Coverage\n\n- Info about any job related health insurance that is open to your family\n- Policy numbers for any current health insurance"", 
+""## How long does it take?\n\n- The State must decide within 45 days for a Medi-Cal application that doesn't involve a disability. However, you may hear back sooner.""]
+","Yes, you might be able to get both. Make sure to include the income you get from unemployment benefits and severance when you apply for Medi-Cal. As long as you still meet Medi-Cal income requirements, you can get both. 
+
+Here's more information: 
 
 Unemployment Benefits can help make ends meet while you keep looking for a new job: 
 - What is it? Temporary income when you lose your job (or had hours reduced) through no fault of your own. 
-- How much can I get? You get from $40 to $450 each week, depending on how much you earned in the past 18 months. EDD has an Unemployment Benefit Calculator to help you estimate how much you might get before you apply. Since the gig work would be part time while you find a full time role, this just means you would likely be eligible for less money in unemployment and if you show the work is part time only. 
+- How much can I get? You get from $40 to $450 each week, depending on how much you earned in the past 18 months. EDD has an Unemployment Benefit Calculator to help you estimate how much you might get before you apply. Since the gig work would be part time while you find a full time role, you would likely be eligible for less money in unemployment. And you would need to explain that the part time gig work is only temporary until you find full time work. Applying is the best way to know if you're eligible or not.  
 - How long does it take to hear back? It takes about three weeks to process your benefit application and make the first payment. 
 - You may also be able to attend school or training while receiving unemployment benefits. Learn more about California Training Benefits here: https://edd.ca.gov/en/unemployment/
 - Am I eligible? You need to have all of the following to get unemployment benefits: Social Security number, authorization to work in the US (if not a US citizen), have earned a minimum amount of money over the past 18 months (called base period), be totally or partially unemployed through no fault of your own, and be physically able to, available for and looking for work each week and ready / willing to accept work right away
@@ -1670,7 +1684,39 @@ Step 6: Receive Your First Payment - generally takes 3 weeks after you submit yo
 Step 7: Keep Certifying - you must do this step 5 every 2 weeks to keep your benefits 
 Step 8: End Your Benefits: your benefit year ends 12 months after the start date of your first claim. You will need to re-apply if you still meet eligibility criteria. 
 
-Citations:  [1] https://edd.ca.gov/en/unemployment/",In progress: unemployment,Step 1 to Step 8 of EDD Get Your Information in Order was not pulled right - weirdly did languages instead? https://edd.ca.gov/en/unemployment/step-1-get-your-information-in-order/  Included more detailed info on the documents needed and ways to apply and recertification requirements ,
+For health coverage, California offers Medi-Cal or Medicaid which is free or low-cost health care to people who qualify. 
+
+## Medi-Cal Details
+What Medi-Cal covers: 
+- pays for doctor visits
+- hospital care
+- immunization (vaccines) 
+- pregnancy related help 
+- nursing home care and more 
+
+Eligibility: You have to live in California and meet certain rules like income cut-offs based on household size (138% of the federal poverty level or lower, which is $21,597 for a household of 1). Even if your income is over the Medi-Cal limit, you could still get help paying for private health care through Covered California (if your part-time gig work puts you over Medi-Cal income limits). 
+
+How to apply: 
+- Go in person to your county office (if you tell me your county, I can look this up for you) or online on BenefitsCal.com.
+- To make the application faster, spend some time gathering these documents first, typically 1 or 2 in each category: 
+    - Identity: birth certificate, driver's license, SSN, paycheck, US passport, military ID, etc. 
+    - Immigration Status: INS documents, immigration papers/forms/cards, certificate of naturalization, etc. 
+    - Proof you live in California: driver's license, check stub, rent/mortgage receipt, utility bill, etc.
+    - Money you earn: check stubs for last 30 days, statement from employer, last year's tax return, bank statement for direct deposit 
+    - Other income: benefit check, copies of child support checks, alimony, award letters 
+    - Resources: bank statements showing savings / checkings accounts, mortgage statements, vehicle registration, etc. 
+    - Additional proof of coverage: information about any job related health insurance that is open to your or your family, policy numbers of any current plans 
+
+How long does it take? 
+- California must decide on your case within 45 days. You may hear back sooner. If you have a disability it may take up to 90 days (depending on how quickly you submit documents and doctors submit records. To speed up the process, tell your county office that you have an urgent medical or dental need. This can be a serious illness or also if you are pregnant. 
+
+Using and Keeping your coverage: 
+- If approved, you'll get a Benefits Identification Card (BIC) in the mail. You can start using Medi-Cal right away. To get all benefits, you may need to pick a Medi-Cal health plan. Your county will mail you details about plans and how to sign up. 
+- If anything changes in your situation like moving, income amount, number of people in your home, pregnancy, or marital status, you need to update your application within 10 days. 
+- You have to renew your benefits every year on the anniversary of your enrollment in Medi-Cal. The county may automatically renew you or you may need to provide additional information if not. They will mail you a letter telling you what they need. Log in to your account to find out your renewal date. It's good to put a reminder in your calendar a year from when you apply and get approved as a reminder. 
+
+
+Citations:  https://edd.ca.gov/en/unemployment/; https://benefitscal.com/Help/program/medical/HCPDE?lang=en",Done,Step 1 to Step 8 of EDD Get Your Information in Order was not pulled right - weirdly did languages instead? https://edd.ca.gov/en/unemployment/step-1-get-your-information-in-order/  Included more detailed info on the documents needed and ways to apply and recertification requirements ,
 Q_024,medium,"First-time benefits seeker, Recently laid-off worker",application_steps,"rent, foreclosure and paying bills support, unemployment benefits, housing",Rent is due next weke and I hvae high utilities. Is theer emergency help while I apply for Unempolyment Insurance?,"{""source_url"": ""https://edd.ca.gov/en/unemployment/""},
 
 {""""source_url"""": """"https://www.mylowcostauto.com/get-started/coverage""""},
@@ -1797,9 +1843,55 @@ Documents you would need to provde: driver's license, current vehicle registrati
 To apply online: visit mylowcostauto.com and click 'Get Started' to take a short eligibility questionnaire.  If deemed eligible, enter your ZIP code, then click on Apply Online. If you do not have internet access or need additional assistance, please call 1-866-602-8861.
 
 Citations:  https://edd.ca.gov/en/unemployment/; https://www.mylowcostauto.com/get-started/coverage; https://www.mylowcostauto.com/get-started/requirements; https://www.cdss.ca.gov/inforesources/cdss-programs/housing-programs; https://www.californialifeline.com/en; https://www.cpuc.ca.gov/consumer-support/financial-assistance-savings-and-discounts/lifeline/california-lifeline-eligibility#qualify; https://www.californialifeline.com/en/eligibility_requirements; https://www.usa.gov/emergency-pay-rent; https://www.211.org/get-help/housing-expenses; https://legalfaq.org/covid/ca#state-problems; https://www.usa.gov/emergency-housing; https://www.usa.gov/avoid-foreclosure; https://www.csd.ca.gov/Pages/Residential-Energy-Efficiency.aspx; https://www.csd.ca.gov/Pages/DOE-Income-Eligibility.aspx; [14[ https://www.csd.ca.gov/energybills; https://www.csd.ca.gov/Pages/Assistance-CommunityServices.aspx; https://www.csd.ca.gov/Pages/LIHEAPProgram.aspx",Done,Step 1 to Step 8 of EDD Get Your Information in Order was not pulled right - weirdly did languages instead? https://edd.ca.gov/en/unemployment/step-1-get-your-information-in-order/  Included more detailed info on the documents needed and ways to apply and recertification requirements ,
-Q_025,medium,First-time benefits seeker,multi_intent,"health coverage, SNAP / CalFresh, Emergency Food Assistance",I’ve never used benefits. I need help with food and maybe paying for my healthcare. What should I start with in San Francisco County?,"[{""doc_id"": ""4b526d27fffab87aefaecd8ff2cb035253067c65a3b966644859a9a64155ccd1"", ""source_url"": ""https://www.getcalfresh.org/en""},{""doc_id"": ""e43cebe88845389ae3c72fff59ad966afdb9ece07d3e1b1cee96ab863f0d4b97"", ""source_url"": ""https://www.getcalfresh.org/en/faq""},{""doc_id"": ""0ca2aab9bb5f7e466c89d94c561792577903fc8b777b4db2fd51601189847359"", ""source_url"": ""https://www.cdss.ca.gov/food-banks""}]","[""## What if I need help now?\n\n- find your local food bank (opens in a new tab)"", ""## 1. Apply\n\n- Apply on BenefitsCal.com (opens in a new tab) . Your county will call you within a week or two for an eligibility interview."",""## 2. Get money for food\n\n- If approved, you will get an EBT card for groceries within 10 days."", ""\n- Chat with us\n- Get live help Monday-Friday, 9am-4pm PT.""], 
+Q_025,medium,First-time benefits seeker,multi_intent,"health coverage, SNAP / CalFresh, Emergency Food Assistance",I’ve never used benefits. I need help with food and maybe paying for my healthcare. What should I start with in San Francisco County?,"[{""source_url"": ""https://www.getcalfresh.org/en""},
+{""source_url"": ""https://www.getcalfresh.org/en/faq""},
+{""source_url"": ""https://www.cdss.ca.gov/food-banks""},
+{""source_url"": ""https://benefitscal.com/Help/program/medical/HCPDE?lang=en""},
+{""source_url"": ""https://www.coveredca.com/get-started/""},
+{""source_url"": ""https://www.coveredca.com/documents-to-confirm-eligibility/""},
+{""source_url"": ""https://www.coveredca.com/documents-to-confirm-eligibility/social-security-number/""},
+{""source_url"": ""https://www.coveredca.com/documents-to-confirm-eligibility/identity/,
+{""source_url"": ""https://www.coveredca.com/documents-to-confirm-eligibility/citizenship/,
+{""source_url"": ""https://www.coveredca.com/documents-to-confirm-eligibility/immigration-status/,
+{""source_url"": ""https://www.coveredca.com/documents-to-confirm-eligibility/income/""},
+{""source_url"": "" https://www.coveredca.com/documents-to-confirm-eligibility/minimum-essential-coverage/""},
+{""source_url"": ""https://www.usa.gov/cobra-health-insurance""},
+{""source_url"": ""https://www.usa.gov/help-with-medical-bills""},
+{""source_url"": ""https://www.consumerfinance.gov/ask-cfpb/is-there-financial-help-for-my-medical-bills-en-2124/""}
+]","[""## What if I need help now?\n\n- find your local food bank (opens in a new tab)"", ""## 1. Apply\n\n- Apply on BenefitsCal.com (opens in a new tab) . Your county will call you within a week or two for an eligibility interview."",""## 2. Get money for food\n\n- If approved, you will get an EBT card for groceries within 10 days."", ""\n- Chat with us\n- Get live help Monday-Friday, 9am-4pm PT.""], 
 [""""## Get food now\n\n- For immediate food assistance, find your local food bank. You can also call 2-1-1, a resource helpline for referrals for childcare, affordable housing or shelter, cash assistance, healthcare and more."",""- BenefitsCal (opens in a new tab)\n\nYour county has 30 days to approve or deny your case. You might qualify for faster, expedited service if you have a very low income and few resources."",""The documents you need to submit depends on your situation. When you apply on GetCalFresh.org, you will be given a list of recommended documents to submit. These documents are usually required to get CalFresh:\n- A copy of your ID\n- Proof of any income\n- Proof of immigration status (for non-citizens)\n- Proof of student status (for college students). For example, a class schedule, enrollment letter, or financial aid award letter\n- These documents are optional but can increase your benefit amount:\n- Proof of housing expenses\n- Proof of child support that you pay\n- Proof of child/dependent care that you pay for\n- If you are 60+ or disabled, proof of medical expenses.\n- If you can’t get proof, the CalFresh office will generally accept a written statement explaining your situation - make sure it is signed and dated.""],
-[""San Francisco County San Francisco Food Bank 900 Pennsylvania Avenue San Francisco 415-282-1907""]","I'm sorry to hear that, job loss is very stressful. I'm here to help. Here are some options based on what you shared so far. I can go into more detail into any of these. 
+[""San Francisco County San Francisco Food Bank 900 Pennsylvania Avenue San Francisco 415-282-1907""],
+
+[""## Is Medi-Cal right for my family?\n\n- Medi-Cal provides free or low-cost health care to people who qualify. It can help pay for doctor visits, hospital care, immunization (vaccines), pregnancy-related services, nursing home care, and other services. This includes:"", 
+""## Who is eligible for Medi-Cal?\n\nMedi-Cal provides free or low-cost health coverage for individuals (adults and children) and families who qualify. To qualify for Medi-Cal, you must live in the state of California and meet certain rules, such as having income under the Medi-Cal limit. If your income is over the Medi-Cal limit, you may still be eligible for help paying for private health care. You may qualify for health insurance even if you are not a U.S. citizen or a U.S. national."", 
+""## What documents will I need?\n\n- These documents may be helpful when you apply:"", 
+""## Identity of Applicant\n\n- Birth certificate\n- Driver's license\n- Paycheck\n- School records\n- U.S. Passport\n- U.S. American Indian/Alaska Native Tribal document\n- U.S. military ID\n- Fed, state or local ID\n- Social Security numbers\n- Award letter\n- Medicare card"", 
+""## Immigration Status\n\n- INS Documents\n- Immigration papers/forms/cards (copy of both sides)\n- Certificate of naturalization\n- Other proof from immigration (USCIS), such as: work authorization, letter of decision or court order on your case, etc.\n- Note: All documents and forms will be verified through the Systematic Alien Verification for Entitlement (SAVE)"", 
+""## Proof you live in California\n\n- Driver's license\n- Check stub\n- Rent or mortgage receipt\n- Utility bill\n- School, government, or any document showing a California address"", 
+""## Money You Earn\n\n- Dated check stubs for the last 30 days\n- Statement from your employer\n- Copy of last year's tax return\n- Bank statement showing direct deposit"", 
+""## Other Income\n\n- A current benefit check\n- Copies of child support checks\n- Alimony checks\n- Award letters"", 
+""## Resources\n\n- Bank statements showing savings and checking accounts\n- Mortgage statements\n- Life insurance policies\n- Statements of stocks, bonds, or certificates of deposit (CDs)\n- Trust documents\n- Vehicle registration\n- Department of Motor Vehicle registration certificate\n- Medical bills"", 
+""## Additional Proof for Health Coverage\n\n- Info about any job related health insurance that is open to your family\n- Policy numbers for any current health insurance"", 
+""## How long does it take?\n\n- The State must decide within 45 days for a Medi-Cal application that doesn't involve a disability. However, you may hear back sooner.""],
+
+[""## Start Your Enrollment\n\n- Once you’ve compared health insurance options and decided on the plan that’s right for you, it’s time to apply. Here’s what you need to know about the process.\n- Start Online Application More Ways to Apply"", 
+""## What You’ll Need to Apply\n\n- Knowing the following information before you start can make applying easier. We will confirm your application details with government data or what you’ve shared before.\n- Social Security Numbers\n- For applicants who have them.\n- Federal Tax Information\n- For applicants who file taxes.\n- Immigration Documents\n- For non-citizens.\n- Employer and Income Information\n- For applicants who earn money."", 
+""## How to Apply\n\n- There are several ways to apply. Each option is free and confidential.\n- schedule Time to complete: 30 minutes\n- check Fastest and most convenient method\n- computer Save your progress to finish any time\n- schedule Time to complete: 1 hour\n- location_on Get free local help\n- language Available in multiple languages\n- Apply by Mail\n- Available in 11 languages. Get your paper application here."", 
+""## Get a Quote Before Applying\n\n- Still need to compare your options? You can review plans, costs and benefits before starting your application with our Shop and Compare Tool.\n- Shop and Compare Plans""],
+[""## Documents to Confirm Eligibility\n\n- Covered California compares the information you enter on your application with government data sources or information you've provided before. If the data is inconsistent, we ask you to submit documents to confirm the new information.""],
+[""## Proof of Lack of Minimum Essential Coverage (MEC)\n\n- Certificate of coverage or letter from the health insurance company showing the end date of coverage.\n- Government-issued document showing date of termination of health insurance or ineligibility to program.\n- Employer statement indicating no offer of affordable minimum value health insurance through your job.\n- Self-attestation (legally signing a document yourself to confirm its authenticity), where the individual is unable to provide any of the above documents.\n- Submit a copy of one of the following documents.""],
+
+[""## Learn about COBRA insurance and how to get coverage\n\n- COBRA, the Consolidated Omnibus Budget Reconciliation Act, lets qualified workers keep their group health insurance for a limited time after a change in eligibility."", 
+""## How does COBRA insurance work?\n\n- COBRA applies to most private sector businesses with 20 or more employees. It requires an employer's group health insurance plan to continue after qualifying life events. These include:\n- Termination or a reduction of a covered employee's hours\n- Divorce or legal separation from a covered employee\n- Death of a covered employee\n- Medicare eligibility for a covered employee\n- Loss of a child's or dependent's health insurance coverage under the plan\n- Qualified beneficiaries under COBRA include:\n- An employee\n- Spouse\n- Former spouses\n- Dependent children\n- The amount of time COBRA benefits last depends on the qualifying life event you experience. In some cases, it may be for 36 months. If your hours were reduced or your job was terminated, you can receive COBRA benefits for 18 months."", 
+""## Find out if you are eligible for COBRA\n\n- COBRA eligibility has three basic requirements that must be met for you to get a continuation of coverage:\n- Your group health plan must be covered by COBRA.\n- A qualifying event must occur.\n- You must be a qualified beneficiary for that event."", 
+""## How to get COBRA coverage\n\nWhen a qualifying life event happens, you or your employer will notify the health plan. The plan will send an election notice that you will have 60 days to respond to. If you elect to take COBRA coverage, your employer may pay a portion of or the full amount of your insurance premium.\n- Contact your employer’s health insurance plan administrator with questions about COBRA, including:\n- If you currently have COBRA coverage\n- When your COBRA coverage will begin\n- How long the coverage may last""],
+
+[""## More help with medical bills after insurance\n\n- If you already receive coverage from Medicaid, Medicare, ACA Marketplace, or other insurance, additional programs may provide further support.\nMedicare Savings Programs - There are 4 Medicare Savings Programs that may be able to help with Part A and Part B premiums, deductibles, coinsurance, and copayments. Learn more about the Medicare Savings Programs, if you qualify, and how to apply.\n- Medicare Extra Help - This program can help you pay Medicare Part D costs that cover prescription drugs. Find out if you qualify for Extra Help and apply.\nCharity care - If you still need help with medical bills after health insurance or Medicaid payments have been applied, a charity care program may assist you with the remaining costs. In most cases, you can apply for charity care through a doctor or hospital where you are seeking medical treatment. Learn more about charity care and how it works."", 
+""## Get help paying for prescription drugs\n\n- Contact the pharmaceutical companies that make your prescription drugs or devices. Ask them about low-cost options, samples, or discounts.\n- Learn about generic drugs and how they can lower your costs.\n- State social services agencies provide direct assistance to people with limited access to health care. They can offer referrals to local health centers and organizations that may be able to help.\n- If you are eligible for Medicare, you can get help paying for your prescriptions through Medicare Part D.\nTo get prescription coverage if you choose Medicare Part C, be sure to select a Medicare Advantage Plan that offers prescription drug coverage. Learn more about Medicare Part C plans beginning on page 12 of Understanding Medicare Advantage Plans."",
+""## Get help paying medical bills through debt management\n\nIn some cases, you may be able to get help paying your medical bills with a debt management plan. This involves a payment schedule that a credit counselor develops based on your situation. When you make a payment, your money is deposited into an account with the credit counseling organization, which then pays your debt. You may be able to get lower interest rates and certain fees waived to help make it easier to pay off your medical debt. Learn more about debt management and how it works.""],
+
+[""## Steps to take for charity care or financial help with medical bills\n\nAsk for a copy of the hospital’s financial assistance policy up front. By law, the policy must be provided free of charge and must tell you how to apply for help. You can ask whether the policy is available in your preferred language in addition to English.\n- Fill out the application with information about your income, including last year’s tax forms or a current pay stub, and your expenses, including your rent or mortgage payment, utilities, credit cards, and other expenses.\n- Ask your provider how long it takes to process your application for financial assistance, how to get answers to questions about the application, and what happens with your bill in the meantime.\n- Notify any debt collectors trying to collect on the hospital bill that you’re seeking financial assistance for the bill. You can tell them to pause collections while that is pending.\n- Follow up with the service provider and its billing department about the status of your application as necessary.""]
+","I'm sorry to hear that, job loss is very stressful. I'm here to help. Here are some options based on what you shared so far. I can go into more detail into any of these. 
 
 Food Help 
 - If you need food now, you can go to the San Francisco Food Bank on 900 Pennsylvania Avenue or call first to see if you qualify for help: 415-282-1907
@@ -1812,9 +1904,82 @@ CalFresh Steps to Apply:
 - Documents you need: copy of your ID, proof of any income, proof of immigration status (for non-citizens) within 30 days of applying. Other optional documents could increase you benefit amount like proof of housing expenses, child support, or dependent care.
 
 Healthcare
-TBD
+For health coverage, California offers Medi-Cal or Medicaid which is free or low-cost health care to people who qualify. For those who make above Medi-Cal income limits, Covered California is another option to get help paying for a private healthcare plan. 
 
-Citations: [1] https://www.getcalfresh.org/en; [2] https://www.getcalfresh.org/en/faq'; [3] https://www.cdss.ca.gov/food-banks ","In progress, SNAP / food done",,
+## Medi-Cal Details
+What Medi-Cal covers: 
+- pays for doctor visits
+- hospital care
+- immunization (vaccines) 
+- pregnancy related help 
+- nursing home care and more 
+
+Eligibility: You have to live in California and meet certain rules like income cut-offs based on household size (138% of the federal poverty level or lower, which is $21,597 for a household of 1). Even if your income is over the Medi-Cal limit, you could still get help paying for private health care through Covered California. You can qualify even if you are not a US citizen or national. 
+
+How to apply: 
+- Go in person to your county office (if you tell me your county, I can look this up for you) or online on BenefitsCal.com.
+- To make the application faster, spend some time gathering these documents first, typically 1 or 2 in each category: 
+    - Identity: birth certificate, driver's license, SSN, paycheck, US passport, military ID, etc. 
+    - Immigration Status: INS documents, immigration papers/forms/cards, certificate of naturalization, etc. 
+    - Proof you live in California: driver's license, check stub, rent/mortgage receipt, utility bill, etc.
+    - Money you earn: check stubs for last 30 days, statement from employer, last year's tax return, bank statement for direct deposit 
+    - Other income: benefit check, copies of child support checks, alimony, award letters 
+    - Resources: bank statements showing savings / checkings accounts, mortgage statements, vehicle registration, etc. 
+    - Additional proof of coverage: information about any job related health insurance that is open to your or your family, policy numbers of any current plans 
+
+How long does it take? 
+- California must decide on your case within 45 days. You may hear back sooner. If you have a disability it may take up to 90 days (depending on how quickly you submit documents and doctors submit records. To speed up the process, tell your county office that you have an urgent medical or dental need. This can be a serious illness or also if you are pregnant. 
+
+Using and Keeping your coverage: 
+- If approved, you'll get a Benefits Identification Card (BIC) in the mail. You can start using Medi-Cal right away. To get all benefits, you may need to pick a Medi-Cal health plan. Your county will mail you details about plans and how to sign up. 
+- If anything changes in your situation like moving, income amount, number of people in your home, pregnancy, or marital status, you need to update your application within 10 days. 
+- You have to renew your benefits every year on the anniversary of your enrollment in Medi-Cal. The county may automatically renew you or you may need to provide additional information if not. They will mail you a letter telling you what they need. Log in to your account to find out your renewal date. It's good to put a reminder in your calendar a year from when you apply and get approved as a reminder. 
+
+## Covered California Details
+Eligibility: Anyone can apply for Covered California if you are a California resident and have satisfactory immigration status. The most financial help is available for people who are within 138% to 250% of the federal poverty level, but even individuals making up to 400% of the federal poverty level could get help.If you are already receiving health insurance, you can still get a plan but may not be able to get help covering the plan costs. DACA recipients do not qualify. People who are not lawfully present do not qualify. People over 65 usually do not as well (they are Medicare eligible). 
+
+How to apply: Applying online is fastest (takes about 30 minutes) on coveredca.com. You can also get free help locally from a certified enroller or apply by phone (takes abuot 1 hour). You can also complete a paper application and mail it in but processing may take a bit longer. 
+Gathering these documents ahead of time can make the application process go faster: 
+Covered California compares information you put in your application with government data sources. If the data does not match, Covered California will need additional documents from you such as the following: proof of income, SSN, identity, citizenship / immigration status, proof of lack of minimum essential health coverage (this can be a certificate from an insurance company showing end date of your previous coverage, an employer statement saying they no longer offer this kind of health coverage, etc.). For the other categories, the types of documents you'd need are similar to Medi-Cal, but let me know if you want me to pull specific document types that could work. 
+
+Keeping your benefits: 
+You must report any changes in your life situation to (for example, address, family size, income) within 30 days. 
+Renewal is in the fall of each year and goes to the end of the calendar year. You'll get notified by Covered California when it's time. 
+
+
+## COBRA insurance 
+COBRA is another temporary option for health coverage. It applies to most private companies with 20 or more employees. It requires that the employer's group health insurance plan continues after qualifying life events such as: 
+- Termination of reduction in employee hours 
+- Divorce or legal separation from a covered employee
+- Death of an employee
+- Medicare eligibility for a employee
+- Loss of a child or dependent's health coverage under the plan 
+How long do COBRA benefits last? 
+This depends on the qualifying life event. Some times this is 36 months or 3 years. If you are on COBRA because your employer reduced your hours or terminated your job, you could receive COBRA for 18 months or 1.5 years. 
+Eligibility for COBRA: 
+- Your group health plan must be covered by COBRA
+- A qualifying life event must occur 
+- You must be a qualified beneficiary for the event. 
+How to Get COBRA: 
+- Your employer notifies your health plan when a qualifying life event happens.
+- Keep an eye out for an election notice from the health plan - you will have 60 days to respond to it. 
+- If you accept the COBRA coverage, your employer may pay some or the full amount of your monthly premium. 
+If you have questions, you should contact your employer's health insurance plan administrator. 
+
+## Help with Medical Bills
+There are also options for help with medical bills even if you don't have insurance or are under-insured (you have healthcare needs that are not covered by your plan): 
+After applying for Medicaid (Medi-Cal) and ACA Marketplace (Covered California), and you still need help covering health care costs, you can still get help through the following: 
+- Charity care: in most cases, you can apply through the doctor office or hospital where you are seeking medical treatment. Take these steps: 
+    - First, ask for a copy of the hosital or provider's financial assistance policy. 
+    - Fill out the application with information about your income and expenses 
+    - Ask questions about the process like how long it will take to process your application and what happens to your bill in the meantime
+    - Notify debt collectors if they are trying to collect and ask them to pause while that is pending 
+    - Follow up with the hospital / provider and its billing department about your application's status as needed. 
+- Medicare has several savings and extra help options - but this only applies if you are Medicare eligible - usually 65 years or older 
+- Debt management: Get on a payment schedule with a credit counselor. You make an account with the credit counseling organization and then pay off your debt as you deposit money. You may get lower interest rates and certain fees waived when going this route. 
+- Prescription costs: You can contact the pharmaceutical companies that make your drugs or devices and ask about low cost options, samples or discounts. See if your drug has a generic version - this is the same formulation but with a different brand that is usually more affordable. You can also go to your county social service agency to get referrals to local health centers and nonprofits that may be able to help you. 
+
+Citations: https://www.getcalfresh.org/en; https://www.getcalfresh.org/en/faq'; https://www.cdss.ca.gov/food-banks; https://benefitscal.com/Help/program/medical/HCPDE?lang=en; https://www.coveredca.com/get-started/; https://www.coveredca.com/documents-to-confirm-eligibility/social-security-number/;  https://www.coveredca.com/documents-to-confirm-eligibility/identity/; https://www.coveredca.com/documents-to-confirm-eligibility/citizenship/; https://www.coveredca.com/documents-to-confirm-eligibility/immigration-status/; https://www.coveredca.com/documents-to-confirm-eligibility/income/; https://www.coveredca.com/documents-to-confirm-eligibility/minimum-essential-coverage/; https://www.usa.gov/cobra-health-insurance; https://www.usa.gov/help-with-medical-bills; https://www.consumerfinance.gov/ask-cfpb/is-there-financial-help-for-my-medical-bills-en-2124/ ",Done,,
 Q_026,hard,"Complex household, Recently laid-off worker, Parent / Caregiver",multi_intent,"CalWORKs / TANF, General Assistance, health coverage, SNAP / CalFresh, Emergency Food Assistance, WIC","Caring for a relative’s child and my husband just lost work. Can I apply for cash aid, can we apply together with health coverage or food aid, and how do I avoid overpayments?","[{""doc_id"": ""4b526d27fffab87aefaecd8ff2cb035253067c65a3b966644859a9a64155ccd1"", ""source_url"": ""https://www.getcalfresh.org/en""},
 {""doc_id"": ""e43cebe88845389ae3c72fff59ad966afdb9ece07d3e1b1cee96ab863f0d4b97"", ""source_url"": ""https://www.getcalfresh.org/en/faq""},
 {""doc_id"": ""0ca2aab9bb5f7e466c89d94c561792577903fc8b777b4db2fd51601189847359"", ""source_url"": ""https://www.cdss.ca.gov/food-banks""},

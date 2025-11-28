@@ -37,13 +37,24 @@ def split_markdown_into_chunks(md: str, target_chars: int = 1500, overlap_chars:
             lines = p_block.splitlines()
             buf, blen = [], 0
             for ln in lines:
-                if blen + len(ln) + 1 > target_chars and buf:
+                # Process the line in pieces if it exceeds the target size
+                while ln:
+                    space_left = target_chars - blen
+                    # If the whole line fits, append and break
+                    if len(ln) + 1 <= space_left:
+                        buf.append(ln)
+                        blen += len(ln) + 1
+                        ln = ""
+                        break
+
+                    # If there's some space left, fill it and flush a chunk
+                    if space_left > 0:
+                        buf.append(ln[:space_left])
+                        ln = ln[space_left:]
                     chunks.append("\n".join(buf).strip())
-                    # overlap from end of buf
                     overlap_text = "\n".join(buf)[-overlap_chars:]
                     buf, blen = ([overlap_text], len(overlap_text))
-                buf.append(ln)
-                blen += len(ln) + 1
+
             if buf:
                 chunks.append("\n".join(buf).strip())
             continue
@@ -126,14 +137,14 @@ class RAGIngestor:
 
     def embed_text(self, text: str) -> List[float]:
         # Approximate tokens := len(text) / 4 chars per token
-        approx_tokens = max(1, len(text) // 4)
+        # approx_tokens = max(1, len(text) // 4)
 
         # Hard safety: keep well under 8,192 token limit
-        MAX_TOKENS = 5000       # a bit of margin below 8192
-        if approx_tokens > MAX_TOKENS:
-            max_chars = MAX_TOKENS * 4
-            # Trim the text to stay under limit
-            text = text[:max_chars]
+        # MAX_TOKENS = 5000       # a bit of margin below 8192
+        # if approx_tokens > MAX_TOKENS:
+        #     max_chars = MAX_TOKENS * 4
+        #     # Trim the text to stay under limit
+        #     text = text[:max_chars]
 
         resp = self.openai_client.embeddings.create(
             model=self.models["embed_model"],
@@ -160,8 +171,12 @@ class RAGIngestor:
                 continue
 
             doc_id = doc.get("doc_id")
+            # Drop unused/sensitive keys before storing metadata in Pinecone
+            doc.pop("captured_at", None)
+            doc.pop("doc_id", None)
+            doc.pop("checksum", None)
+
             source_url = doc.get("source_url", "")
-            captured_at = doc.get("captured_at", "")
             sections = doc.get("sections") or []
 
             for sec in sections:
@@ -184,11 +199,9 @@ class RAGIngestor:
                         "text": piece,
                         "s3_key": key,
                         "chunk_id": chunk_id,
-                        "doc_id": doc_id,
                         "section_id": section_id,
                         "heading": heading,
                         "source_url": source_url,
-                        "captured_at": captured_at,
                         "char_count": len(piece),
                         "approx_tokens": estimate_tokens(piece),
                     }

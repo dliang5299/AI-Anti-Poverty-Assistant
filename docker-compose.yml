@@ -12,8 +12,6 @@ services:
       - PINECONE_REGION=${PINECONE_REGION:-us-east-1}
       - PINECONE_ENV=${PINECONE_ENV:-aws-us-east-1}
       - BEDROCK_REGION=${BEDROCK_REGION:-us-west-2}
-      - SECRETS_ARN=${SECRETS_ARN}
-      # Backward compatibility: support individual secrets if SECRETS_ARN not set
       - OPENAI_API_KEY_SECRET_ARN=${OPENAI_API_KEY_SECRET_ARN:-}
       - PINECONE_API_KEY_SECRET_ARN=${PINECONE_API_KEY_SECRET_ARN:-}
       - PINECONE_INDEX_NAME=${PINECONE_INDEX_NAME:-benefitsflow}
