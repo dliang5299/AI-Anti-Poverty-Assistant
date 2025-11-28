@@ -180,7 +180,6 @@ def generate_calendar_events(
             # RAG context is helpful but not required if conversation has explicit dates
             if not context_text:
                 context_text = ""  # Continue even without RAG context
-                print(f"DEBUG: No RAG context retrieved, but continuing with conversation-only extraction")
         except Exception as e:
             print(f"DEBUG: Error getting RAG context for calendar (continuing anyway): {e}")
             import traceback
@@ -194,13 +193,18 @@ def generate_calendar_events(
         next_year = current_year + 1
         
         system_prompt = f"""You are a helpful assistant that creates personalized calendar events for California public benefits programs.
-Generate calendar events based on deadlines, renewal dates, and important dates mentioned in the conversation.
+Generate calendar events based on deadlines, renewal dates, and important dates mentioned in the USER'S CONVERSATION.
 Today's date is {today_str} (year: {current_year}).
 Each event should have:
 - summary: Event title
 - description: What needs to be done
 - start_date: Date in YYYY-MM-DD format
 - url: Relevant website URL if available
+
+CRITICAL: 
+- PRIORITIZE dates mentioned in the conversation text - these are the user's specific needs
+- IGNORE generic holiday/closing dates unless the user specifically mentioned them
+- Focus on application deadlines, enrollment periods, and deadlines mentioned by the user
 
 IMPORTANT: Extract dates directly from the conversation text. Look for:
 - Absolute dates: "Nov 1", "January 31", "Nov 1 – Jan 31" 
@@ -219,14 +223,20 @@ Focus on application deadlines, renewal dates, SAR-7 deadlines, open enrollment 
 
 Today's date: {today_str} (year: {current_year})
 
-Conversation:
+**PRIMARY SOURCE - CONVERSATION (READ THIS FIRST):**
 {conversation_text}
+
+**SECONDARY SOURCE - PROGRAM INFORMATION (for context only):**
 {rag_section}
 
 User Situation: {user_context.get('situation', 'General')}
 Programs Mentioned: {', '.join(user_context.get('programs', []))}
 
-CRITICAL: Extract ALL dates mentioned in the conversation above. Examples:
+**CRITICAL INSTRUCTIONS:**
+1. PRIORITIZE dates mentioned in the CONVERSATION above - these are the user's specific needs
+2. IGNORE generic holiday/closing dates unless specifically mentioned in the conversation
+3. Focus on application deadlines, enrollment periods, and time-sensitive actions mentioned in the conversation
+4. Extract ALL dates mentioned in the conversation. Examples:
 - "Nov 1 – Jan 31" → Create events for November 1 ({current_year}-11-01) and January 31 ({next_year}-01-31)
 - "60 days from job loss" → If job loss mentioned, calculate 60 days from today or mentioned date
 - "Open enrollment Nov 1 – Jan 31" → Create events for both dates
@@ -260,8 +270,6 @@ Return ONLY valid JSON array, no other text. Example format:
         if not text:
             print(f"DEBUG: No text extracted from Bedrock response")
             return []
-        
-        print(f"DEBUG: Bedrock response text (first 500 chars): {text[:500]}")
         
         # Parse JSON response
         try:
@@ -303,7 +311,8 @@ Return ONLY valid JSON array, no other text. Example format:
                         'url': event.get('url', '')
                     })
             
-            print(f"DEBUG: Successfully generated {len(formatted_events)} calendar events")
+            if formatted_events:
+                print(f"✅ Generated {len(formatted_events)} calendar events")
             return formatted_events if formatted_events else []
             
         except json.JSONDecodeError as e:
