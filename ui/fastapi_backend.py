@@ -1008,10 +1008,10 @@ async def admin_dashboard(days: int = 30):
             </div>
             
             <div class="download-section">
-                <h2>📥 Download Full Report</h2>
-                <p>Export all metrics data (conversations, downloads, performance) as CSV files in a ZIP archive.</p>
-                <a href="/admin/export" class="download-btn">Download Metrics Report (ZIP)</a>
-                <a href="/admin/stats?days={days}" class="download-btn" style="background: #3498db;">View JSON Stats</a>
+                <h2>📥 Download Reports</h2>
+                <p>Export metrics data as CSV files or view JSON stats online.</p>
+                <a href="/api/admin/export/csv" class="download-btn">Download CSV Report</a>
+                <a href="/api/admin/stats?days={days}" target="_blank" class="download-btn" style="background: #3498db;">View JSON Stats</a>
             </div>
             
             <div class="stats-grid" style="margin-top: 20px;">
@@ -1053,42 +1053,64 @@ async def get_stats(days: int = 30):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error getting stats: {str(e)}")
 
-@app.get("/admin/export")
-async def export_report():
+@app.get("/admin/export/csv")
+async def export_csv_report(table: str = "all"):
     """
-    Export metrics database to CSV files (admin endpoint)
+    Export metrics database to CSV file (admin endpoint)
+    
+    Args:
+        table: Which table to export - "conversations", "downloads", "performance", or "all" (default)
     
     Returns:
-        ZIP file with all CSV exports
+        CSV file(s) - if "all", returns conversations.csv (others can be accessed via ?table=downloads, etc.)
     """
     try:
-        import zipfile
         from pathlib import Path
+        import csv
+        from metrics import get_db
         
         # Export to temporary directory
         temp_dir = Path("/tmp") / "benefitsflow_export"
         temp_dir.mkdir(exist_ok=True)
         
-        # Generate CSV files
-        csv_files = export_to_csv(output_dir=temp_dir)
-        
-        if not csv_files:
-            raise HTTPException(status_code=500, detail="No data to export")
-        
-        # Create ZIP file
-        zip_path = temp_dir / "benefitsflow_metrics_export.zip"
-        with zipfile.ZipFile(zip_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
-            for csv_file in csv_files:
-                zipf.write(csv_file, Path(csv_file).name)
-        
-        # Return ZIP file
-        return FileResponse(
-            path=str(zip_path),
-            media_type='application/zip',
-            filename=f'benefitsflow_metrics_{datetime.now().strftime("%Y%m%d")}.zip'
-        )
+        if table == "all":
+            # Export all tables and return the first one (conversations) as primary
+            csv_files = export_to_csv(output_dir=temp_dir)
+            if not csv_files:
+                raise HTTPException(status_code=404, detail="No data to export")
+            # Return conversations.csv as the primary file
+            csv_path = temp_dir / "conversations.csv"
+            if csv_path.exists():
+                return FileResponse(
+                    path=str(csv_path),
+                    media_type='text/csv',
+                    filename=f'benefitsflow_conversations_{datetime.now().strftime("%Y%m%d")}.csv'
+                )
+            # Fallback to first available file
+            return FileResponse(
+                path=str(csv_files[0]),
+                media_type='text/csv',
+                filename=f'benefitsflow_metrics_{datetime.now().strftime("%Y%m%d")}.csv'
+            )
+        else:
+            # Export specific table
+            with get_db() as conn:
+                cursor = conn.execute(f'SELECT * FROM {table}')
+                columns = [description[0] for description in cursor.description]
+                
+                csv_path = temp_dir / f'{table}.csv'
+                with open(csv_path, 'w', newline='', encoding='utf-8') as csvfile:
+                    writer = csv.writer(csvfile)
+                    writer.writerow(columns)
+                    writer.writerows(cursor.fetchall())
+                
+                return FileResponse(
+                    path=str(csv_path),
+                    media_type='text/csv',
+                    filename=f'benefitsflow_{table}_{datetime.now().strftime("%Y%m%d")}.csv'
+                )
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error exporting report: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error exporting CSV: {str(e)}")
 
 if __name__ == "__main__":
     import uvicorn
