@@ -114,7 +114,10 @@ def generate_calendar_events(
     
     # Check if conversation has enough context
     if not _has_sufficient_context(conversation_history):
+        print(f"DEBUG: Insufficient context - conversation has {len(conversation_history)} messages")
         return []
+    
+    print(f"DEBUG: Generating calendar with {len(conversation_history)} messages")
     
     try:
         # Extract key information from conversation
@@ -177,11 +180,12 @@ def generate_calendar_events(
             # RAG context is helpful but not required if conversation has explicit dates
             if not context_text:
                 context_text = ""  # Continue even without RAG context
+                print(f"DEBUG: No RAG context retrieved, but continuing with conversation-only extraction")
         except Exception as e:
-            print(f"DEBUG: Error getting RAG context for calendar: {e}")
+            print(f"DEBUG: Error getting RAG context for calendar (continuing anyway): {e}")
             import traceback
             traceback.print_exc()
-            return []
+            context_text = ""  # Continue even if RAG fails - we can extract from conversation
         
         # Build prompt for Bedrock
         today = datetime.now()
@@ -254,7 +258,10 @@ Return ONLY valid JSON array, no other text. Example format:
         text = _extract_text_from_bedrock(response)
         
         if not text:
+            print(f"DEBUG: No text extracted from Bedrock response")
             return []
+        
+        print(f"DEBUG: Bedrock response text (first 500 chars): {text[:500]}")
         
         # Parse JSON response
         try:
@@ -296,14 +303,20 @@ Return ONLY valid JSON array, no other text. Example format:
                         'url': event.get('url', '')
                     })
             
+            print(f"DEBUG: Successfully generated {len(formatted_events)} calendar events")
             return formatted_events if formatted_events else []
             
         except json.JSONDecodeError as e:
-            print(f"Error parsing calendar JSON: {e}")
+            print(f"ERROR: Error parsing calendar JSON: {e}")
+            print(f"DEBUG: Raw text that failed to parse: {text[:1000]}")
+            import traceback
+            traceback.print_exc()
             return []
             
     except Exception as e:
-        print(f"Error generating calendar: {e}")
+        print(f"ERROR: Error generating calendar: {e}")
+        import traceback
+        traceback.print_exc()
         return []
 
 
