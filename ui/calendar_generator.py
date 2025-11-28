@@ -207,20 +207,34 @@ def generate_calendar_events(
         next_year = current_year + 1
         
         system_prompt = f"""You are a helpful assistant that creates personalized calendar events for California public benefits programs.
-Generate calendar events based on deadlines, renewal dates, and important dates mentioned in the USER'S CONVERSATION.
+Your goal is to help users stay organized and on track with their benefits applications and important deadlines.
 Today's date is {today_str} (year: {current_year}).
 Each event should have:
-- summary: Event title
-- description: What needs to be done
+- summary: Event title (be specific and actionable)
+- description: What needs to be done, why it's important, and any helpful tips
 - start_date: Date in YYYY-MM-DD format
 - url: Relevant website URL if available
 
-CRITICAL: 
-- PRIORITIZE dates mentioned in the conversation text - these are the user's specific needs
-- IGNORE generic holiday/closing dates unless the user specifically mentioned them
-- Focus on application deadlines, enrollment periods, and deadlines mentioned by the user
+CRITICAL INSTRUCTIONS:
+1. CREATE HELPFUL REMINDERS: Even if no explicit deadline is mentioned, create actionable reminders based on the conversation:
+   - "Apply for UI as soon as possible" → Create reminder for today or tomorrow
+   - "Apply for CalFresh right away" → Create reminder for this week
+   - "File within 4 weeks" → Create reminder for 2-3 weeks from now
+   - "60 days from job loss" → Calculate 60 days and create reminder
 
-IMPORTANT: Extract dates directly from the conversation text. Look for:
+2. PRIORITIZE CONVERSATION CONTEXT: Extract dates and deadlines from the conversation first
+   - Look for explicit dates: "Nov 1 – Jan 31", "60 days", "within 4 weeks"
+   - Look for urgency indicators: "as soon as possible", "right away", "don't wait"
+   - Look for deadlines: "file within X weeks", "apply by", "deadline"
+
+3. IGNORE generic holiday/closing dates unless the user specifically asked about them
+
+4. MAKE LOGICAL DECISIONS: Use the entire conversation context to create helpful reminders:
+   - If user mentioned job loss → create reminders for UI, CalFresh, health insurance
+   - If user mentioned specific programs → create reminders for those applications
+   - If user asked about deadlines → extract those and create events
+
+IMPORTANT: Extract dates and create reminders from the conversation. Look for:
 - Absolute dates: "Nov 1", "January 31", "Nov 1 – Jan 31" 
   * If date is in the past this year, use next year ({next_year})
   * If date is in the future this year, use this year ({current_year})
@@ -243,52 +257,53 @@ Focus on application deadlines, renewal dates, SAR-7 deadlines, open enrollment 
             # Only use RAG if conversation doesn't have explicit dates
             rag_section = f"\n\nAdditional Program Information (for reference only - do NOT create events from this unless mentioned in conversation):\n{context_text[:1000]}"
         
-        user_prompt = f"""Based on this conversation, create calendar events for important dates and deadlines mentioned by the user.
+        user_prompt = f"""Based on this ENTIRE conversation, create helpful calendar events and reminders to help the user stay organized with their benefits applications.
 
 Today's date: {today_str} (year: {current_year})
 
-**CONVERSATION (THIS IS YOUR PRIMARY SOURCE - EXTRACT DATES FROM HERE):**
+**FULL CONVERSATION CONTEXT:**
 {conversation_text}
 
-**ADDITIONAL PROGRAM CONTEXT (use only if conversation mentions these programs):**
+**ADDITIONAL PROGRAM CONTEXT (for reference only):**
 {rag_section}
 
 User Situation: {user_context.get('situation', 'General')}
 Programs Mentioned: {', '.join(user_context.get('programs', []))}
 
-**CRITICAL INSTRUCTIONS - READ CAREFULLY:**
-1. **ONLY extract dates that are EXPLICITLY mentioned in the CONVERSATION above**
-2. **DO NOT create events for generic holidays, office closures, or dates not mentioned in the conversation**
-3. **IGNORE any holiday/closing date information from the program context unless the user specifically asked about it**
-4. Focus ONLY on:
-   - Application deadlines mentioned in conversation
-   - Enrollment periods mentioned in conversation (e.g., "Nov 1 – Jan 31")
-   - Time-sensitive actions mentioned in conversation (e.g., "60 days from job loss")
-   - Deadlines the user asked about
+**YOUR TASK: Create helpful calendar events based on the conversation. Be proactive and helpful:**
 
-**Extract dates from conversation. Examples:**
-- "Nov 1 – Jan 31" → Create events for November 1 ({current_year}-11-01) and January 31 ({next_year}-01-31)
-- "60 days from job loss" → If job loss mentioned, calculate 60 days from today or mentioned date
-- "Open enrollment Nov 1 – Jan 31" → Create events for both dates
-- "30-45 days" → Create reminder events at 30 days and 45 days
-- "File as soon as possible" → Create event for today or tomorrow
+1. **EXPLICIT DEADLINES** - If the conversation mentions specific dates or deadlines:
+   - "Nov 1 – Jan 31" → Create events for both start and end dates
+   - "60 days from job loss" → Calculate 60 days from today and create reminder
+   - "File within 4 weeks" → Create reminder for 3 weeks from now (to give buffer)
+   - "Open enrollment Nov 1 – Jan 31" → Create events for both dates
 
-Generate a JSON array of calendar events. Each event should be a JSON object with:
-- "summary": string (event title, e.g., "Covered California Open Enrollment Starts")
-- "description": string (what to do, include the program name and action needed)
-- "start_date": string (YYYY-MM-DD format, use {current_year} or {next_year} as appropriate)
-- "url": string (website URL if available, e.g., "https://www.coveredca.com" for Covered California)
+2. **URGENT ACTIONS** - If the conversation says "as soon as possible", "right away", "don't wait":
+   - "Apply for UI as soon as possible" → Create reminder for tomorrow
+   - "Apply for CalFresh right away" → Create reminder for 2-3 days from now
+   - "File your claim immediately" → Create reminder for today or tomorrow
 
-**IMPORTANT: If the conversation does not mention specific dates, return an empty array: []**
+3. **HELPFUL REMINDERS** - Even without explicit dates, create reminders based on context:
+   - If user mentioned job loss → Create reminders for: UI application, CalFresh application, health insurance enrollment
+   - If user mentioned specific programs → Create reminders for those applications
+   - If user asked "what are the important dates?" → Extract all mentioned deadlines and create events
 
-Return ONLY valid JSON array, no other text. Example format (only if dates are mentioned in conversation):
-[
-  {{"summary": "Covered California Open Enrollment Starts", "description": "Open enrollment period begins for health insurance coverage. Apply at coveredca.com", "start_date": "{current_year}-11-01", "url": "https://www.coveredca.com"}},
-  {{"summary": "Covered California Open Enrollment Ends", "description": "Last day to enroll in health insurance for coverage starting February 1", "start_date": "{next_year}-01-31", "url": "https://www.coveredca.com"}},
-  {{"summary": "File Unemployment Insurance Claim", "description": "File your unemployment insurance claim as soon as possible after job loss", "start_date": "{today_str}", "url": "https://www.edd.ca.gov"}}
-]
+4. **IGNORE** generic holiday/closing dates unless the user specifically asked about them
 
-If no specific dates are mentioned in the conversation, return: []"""
+**Event Format:**
+Each event should be a JSON object with:
+- "summary": string (clear, actionable title, e.g., "Apply for Unemployment Insurance" or "Covered California Open Enrollment Starts")
+- "description": string (what to do, why it's important, helpful tips. Be specific and encouraging)
+- "start_date": string (YYYY-MM-DD format)
+- "url": string (relevant website if available)
+
+**Examples of helpful events:**
+- {{"summary": "Apply for Unemployment Insurance", "description": "File your UI claim as soon as possible. It takes about 3 weeks to process, so the sooner you apply, the sooner you'll receive benefits. Gather your Social Security number, last day worked, and employer information.", "start_date": "{today_str}", "url": "https://edd.ca.gov/Unemployment/"}}
+- {{"summary": "Apply for CalFresh (Food Assistance)", "description": "Apply for monthly food assistance. You can apply any time - no deadline, but apply soon to get help faster. You'll need photo ID, proof of address, and proof of income loss.", "start_date": "{(datetime.now() + timedelta(days=2)).strftime('%Y-%m-%d')}", "url": "https://www.getcalfresh.org/"}}
+- {{"summary": "Covered California Open Enrollment Starts", "description": "Open enrollment period begins. If you lost your job, you have 60 days from job loss to apply for health insurance. Apply early to ensure coverage starts on time.", "start_date": "{current_year}-11-01", "url": "https://www.coveredca.com"}}
+- {{"summary": "Covered California Special Enrollment Deadline", "description": "Last day to apply for health insurance if you lost your job. After this date, you'll need to wait for the next open enrollment period.", "start_date": "{(datetime.now() + timedelta(days=60)).strftime('%Y-%m-%d')}", "url": "https://www.coveredca.com"}}
+
+**Return ONLY a valid JSON array. Create at least 2-5 helpful reminders based on the conversation, even if no explicit dates are mentioned.**"""
         
         # Call Bedrock
         bedrock = get_bedrock()
