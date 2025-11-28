@@ -12,8 +12,14 @@ from contextlib import contextmanager
 from pathlib import Path
 from typing import List, Optional, Dict, Any
 
-# Database path - use /tmp in Docker/EC2, or local path for development
-DB_DIR = Path("/tmp") if os.path.exists("/tmp") else Path(__file__).parent
+# Database path - use persistent location in Docker/EC2, or local path for development
+# Use /app/data for persistence (mounted volume), fallback to /tmp if not available
+if os.path.exists("/app/data"):
+    DB_DIR = Path("/app/data")
+elif os.path.exists("/tmp"):
+    DB_DIR = Path("/tmp")
+else:
+    DB_DIR = Path(__file__).parent
 DB_PATH = DB_DIR / "benefitsflow_metrics.db"
 
 

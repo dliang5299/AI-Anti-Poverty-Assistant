@@ -31,6 +31,7 @@ services:
       - docker.env
     volumes:
       - ~/.aws:/root/.aws:ro
+      - benefitsflow_metrics:/app/data
     environment:
       # For single instance (docker-compose): use service name
       # For two separate EC2 instances: set RAG_API_URL in docker.env to RAG instance's private IP
@@ -46,3 +47,7 @@ services:
 networks:
   bfnet:
     driver: bridge
+
+volumes:
+  benefitsflow_metrics:
+    driver: local
