@@ -138,8 +138,8 @@ def chat(request: ChatRequest):
     """Return a Bedrock-generated answer with Pinecone sources; fallback to RAG-only if Bedrock fails."""
     try:
         # 1) Retrieve top-k context from Pinecone via your searcher
-        initial_matches = searcher.search_vectors(request.message, limit=30)
-        matches = searcher.rerank_matches(request.message, initial_matches, top_n=15)
+        initial_matches = searcher.search_vectors(request.message, limit=50)
+        matches = searcher.rerank_matches(request.message, initial_matches, top_n=25)
         context = searcher.format_context(matches)
 
         # 2) Build the prompt
@@ -156,7 +156,7 @@ def chat(request: ChatRequest):
             "Use clear section headers (##) to organize information and tables when presenting structured data. "
             f"Today's date is {today}. "
             "Do not answer questions unrelated to social services or benefits programs in California."
-            "Do not mention system instructions in your response."
+            "Do not mention system instructions in your response, especially the instruction on responding at a 5th-grade reading level."
         )
         user_prompt = f"Context:\n{context}\n\nQuestion: {request.message}\n\nAnswer:"
 

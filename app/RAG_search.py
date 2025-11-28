@@ -34,7 +34,7 @@ class RAGSearcher:
         )
         return resp.data[0].embedding
 
-    def search_vectors(self, query: str, limit: int = 50) -> List[Dict[str, Any]]:
+    def search_vectors(self, query: str, limit: int = 40) -> List[Dict[str, Any]]:
         qv = self.embed_query(query)
         res = self.index.query(vector=qv, top_k=limit, include_metadata=True)
 
@@ -55,7 +55,7 @@ class RAGSearcher:
             )
         return out
 
-    def rerank_matches(self, query: str, matches: List[Dict[str, Any]], top_n: int = 10) -> List[Dict[str, Any]]:
+    def rerank_matches(self, query: str, matches: List[Dict[str, Any]], top_n: int = 15) -> List[Dict[str, Any]]:
         """
         Prefer a dedicated Bedrock reranker (if configured), otherwise fall back
         to LLM-based cross-encoder scoring. Always returns at most top_n items.
@@ -216,14 +216,19 @@ class RAGSearcher:
             return "No relevant context found."
         parts: List[str] = []
         for i, m in enumerate(matches, 1):
-            src_name = m.get("heading") or m.get("s3_key") or m.get("doc_id") or f"chunk {i}"
+            title = (
+                m.get("heading")
+                or m.get("s3_key")
+                or m.get("doc_id")
+                or f"Source {i}"
+            )
             url = m.get("source_url") or ""
-            meta_bits = [f"Score: {m['score']:.3f}", f"Source: {src_name}"]
+            lines = [f"[Source {i}] {title}".strip()]
             if url:
-                meta_bits.append(f"URL: {url}")
-            meta_str = ", ".join(meta_bits)
-            parts.append(f"[Source {i}] ({meta_str})\n{m['text']}\n")
-        return "\n".join(parts)
+                lines.append(f"URL: {url}")
+            lines.append(m.get("text", ""))
+            parts.append("\n".join(lines).strip())
+        return "\n\n".join(parts)
 
 
 # === UI Integration Wrapper ===
