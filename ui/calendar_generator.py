@@ -118,9 +118,12 @@ def generate_calendar_events(
     
     try:
         # Extract key information from conversation
+        # Include more messages to capture date information that might be in earlier responses
+        # Limit to last 20 messages to avoid token limits, but prioritize recent messages
+        messages_to_include = conversation_history[-20:] if len(conversation_history) > 20 else conversation_history
         conversation_text = "\n".join([
             f"{msg.get('role', 'user')}: {msg.get('content', '')}"
-            for msg in conversation_history[-10:]
+            for msg in messages_to_include
         ])
         
         # Extract key phrases from conversation for better RAG search
@@ -170,8 +173,10 @@ def generate_calendar_events(
             
             context_text, sources = run_in_thread(_get_rag_context_from_deric(query))
         
-            if not context_text or len(sources) < 2:
-                return []
+            # Don't require RAG sources - we can extract dates directly from conversation
+            # RAG context is helpful but not required if conversation has explicit dates
+            if not context_text:
+                context_text = ""  # Continue even without RAG context
         except Exception as e:
             print(f"DEBUG: Error getting RAG context for calendar: {e}")
             import traceback
@@ -179,38 +184,63 @@ def generate_calendar_events(
             return []
         
         # Build prompt for Bedrock
-        today = datetime.now().strftime("%Y-%m-%d")
+        today = datetime.now()
+        today_str = today.strftime("%Y-%m-%d")
+        current_year = today.year
+        next_year = current_year + 1
+        
         system_prompt = f"""You are a helpful assistant that creates personalized calendar events for California public benefits programs.
 Generate calendar events based on deadlines, renewal dates, and important dates mentioned in the conversation.
-Today's date is {today}.
+Today's date is {today_str} (year: {current_year}).
 Each event should have:
 - summary: Event title
 - description: What needs to be done
-- start_date: Date in YYYY-MM-DD format (calculate from today if relative dates mentioned)
+- start_date: Date in YYYY-MM-DD format
 - url: Relevant website URL if available
 
-Focus on application deadlines, renewal dates, SAR-7 deadlines, and other time-sensitive actions."""
+IMPORTANT: Extract dates directly from the conversation text. Look for:
+- Absolute dates: "Nov 1", "January 31", "Nov 1 – Jan 31" 
+  * If date is in the past this year, use next year ({next_year})
+  * If date is in the future this year, use this year ({current_year})
+  * For date ranges like "Nov 1 – Jan 31", Nov 1 is likely {current_year}-11-01 and Jan 31 is likely {next_year}-01-31
+- Relative dates: "60 days from job loss" → calculate from today or mentioned date
+- Recurring dates: "Open Enrollment Nov 1 – Jan 31" → create events for both start and end dates
+- Time periods: "30-45 days" → create reminder events
+
+Focus on application deadlines, renewal dates, SAR-7 deadlines, open enrollment periods, and other time-sensitive actions."""
+        
+        rag_section = f"\nRelevant Program Information (from RAG):\n{context_text[:2000]}" if context_text else ""
         
         user_prompt = f"""Based on this conversation and relevant program information, create calendar events for important dates and deadlines.
 
-Today's date: {today}
+Today's date: {today_str} (year: {current_year})
 
 Conversation:
 {conversation_text}
-
-Relevant Program Information (from RAG):
-{context_text[:2000]}  # Limit context length
+{rag_section}
 
 User Situation: {user_context.get('situation', 'General')}
 Programs Mentioned: {', '.join(user_context.get('programs', []))}
 
-Generate a JSON array of calendar events. Each event should be a JSON object with:
-- "summary": string (event title)
-- "description": string (what to do)
-- "start_date": string (YYYY-MM-DD format, calculate from today if relative dates mentioned)
-- "url": string (website URL if available)
+CRITICAL: Extract ALL dates mentioned in the conversation above. Examples:
+- "Nov 1 – Jan 31" → Create events for November 1 ({current_year}-11-01) and January 31 ({next_year}-01-31)
+- "60 days from job loss" → If job loss mentioned, calculate 60 days from today or mentioned date
+- "Open enrollment Nov 1 – Jan 31" → Create events for both dates
+- "30-45 days" → Create reminder events at 30 days and 45 days
+- "File as soon as possible" → Create event for today or tomorrow
 
-Return ONLY valid JSON array, no other text."""
+Generate a JSON array of calendar events. Each event should be a JSON object with:
+- "summary": string (event title, e.g., "Covered California Open Enrollment Starts")
+- "description": string (what to do, include the program name and action needed)
+- "start_date": string (YYYY-MM-DD format, use {current_year} or {next_year} as appropriate)
+- "url": string (website URL if available, e.g., "https://www.coveredca.com" for Covered California)
+
+Return ONLY valid JSON array, no other text. Example format:
+[
+  {{"summary": "Covered California Open Enrollment Starts", "description": "Open enrollment period begins for health insurance coverage. Apply at coveredca.com", "start_date": "{current_year}-11-01", "url": "https://www.coveredca.com"}},
+  {{"summary": "Covered California Open Enrollment Ends", "description": "Last day to enroll in health insurance for coverage starting February 1", "start_date": "{next_year}-01-31", "url": "https://www.coveredca.com"}},
+  {{"summary": "File Unemployment Insurance Claim", "description": "File your unemployment insurance claim as soon as possible after job loss", "start_date": "{today_str}", "url": "https://www.edd.ca.gov"}}
+]"""
         
         # Call Bedrock
         bedrock = get_bedrock()

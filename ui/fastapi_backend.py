@@ -886,6 +886,156 @@ async def rag_health_check():
             "timestamp": datetime.now().isoformat()
         }
 
+@app.get("/admin", response_class=HTMLResponse)
+async def admin_dashboard(days: int = 30):
+    """
+    Admin dashboard page with stats and download link
+    """
+    try:
+        stats = get_monthly_stats(days=days)
+        
+        # Format stats for display
+        conversations_total = stats.get('conversations', {}).get('total', 0)
+        total_messages = stats.get('conversations', {}).get('total_messages', 0)
+        downloads = stats.get('downloads', {})
+        performance = stats.get('performance', {})
+        program_popularity = stats.get('program_popularity', {})
+        
+        html = f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>BenefitsFlow Admin Dashboard</title>
+            <style>
+                body {{
+                    font-family: Arial, sans-serif;
+                    max-width: 1200px;
+                    margin: 40px auto;
+                    padding: 20px;
+                    background: #f5f5f5;
+                }}
+                .header {{
+                    background: #2c3e50;
+                    color: white;
+                    padding: 20px;
+                    border-radius: 8px;
+                    margin-bottom: 20px;
+                }}
+                .stats-grid {{
+                    display: grid;
+                    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+                    gap: 20px;
+                    margin-bottom: 20px;
+                }}
+                .stat-card {{
+                    background: white;
+                    padding: 20px;
+                    border-radius: 8px;
+                    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+                }}
+                .stat-card h3 {{
+                    margin: 0 0 10px 0;
+                    color: #2c3e50;
+                    font-size: 14px;
+                    text-transform: uppercase;
+                }}
+                .stat-card .value {{
+                    font-size: 32px;
+                    font-weight: bold;
+                    color: #3498db;
+                }}
+                .download-section {{
+                    background: white;
+                    padding: 20px;
+                    border-radius: 8px;
+                    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+                    text-align: center;
+                }}
+                .download-btn {{
+                    background: #27ae60;
+                    color: white;
+                    padding: 15px 30px;
+                    border: none;
+                    border-radius: 8px;
+                    font-size: 16px;
+                    cursor: pointer;
+                    text-decoration: none;
+                    display: inline-block;
+                    margin: 10px;
+                }}
+                .download-btn:hover {{
+                    background: #229954;
+                }}
+                .program-list {{
+                    background: white;
+                    padding: 20px;
+                    border-radius: 8px;
+                    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+                }}
+                .program-list ul {{
+                    list-style: none;
+                    padding: 0;
+                }}
+                .program-list li {{
+                    padding: 8px;
+                    border-bottom: 1px solid #eee;
+                }}
+            </style>
+        </head>
+        <body>
+            <div class="header">
+                <h1>📊 BenefitsFlow Admin Dashboard</h1>
+                <p>Performance metrics for the last {days} days</p>
+            </div>
+            
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <h3>Total Conversations</h3>
+                    <div class="value">{conversations_total}</div>
+                </div>
+                <div class="stat-card">
+                    <h3>Total Messages</h3>
+                    <div class="value">{total_messages}</div>
+                </div>
+                <div class="stat-card">
+                    <h3>Avg Response Time</h3>
+                    <div class="value">{performance.get('avg_response_time_ms', 0):.0f}ms</div>
+                </div>
+                <div class="stat-card">
+                    <h3>Errors</h3>
+                    <div class="value">{performance.get('error_count', 0)}</div>
+                </div>
+            </div>
+            
+            <div class="download-section">
+                <h2>📥 Download Full Report</h2>
+                <p>Export all metrics data (conversations, downloads, performance) as CSV files in a ZIP archive.</p>
+                <a href="/admin/export" class="download-btn">Download Metrics Report (ZIP)</a>
+                <a href="/admin/stats?days={days}" class="download-btn" style="background: #3498db;">View JSON Stats</a>
+            </div>
+            
+            <div class="stats-grid" style="margin-top: 20px;">
+                <div class="stat-card">
+                    <h3>Downloads by Type</h3>
+                    <ul>
+                        <li>Checklists: {downloads.get('checklist', 0)}</li>
+                        <li>Calendars: {downloads.get('calendar', 0)}</li>
+                    </ul>
+                </div>
+                <div class="program-list">
+                    <h3>Top Programs</h3>
+                    <ul>
+                        {''.join([f'<li>{prog}: {count} mentions</li>' for prog, count in list(program_popularity.items())[:10]])}
+                    </ul>
+                </div>
+            </div>
+        </body>
+        </html>
+        """
+        return HTMLResponse(content=html)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error loading admin dashboard: {str(e)}")
+
 @app.get("/admin/stats")
 async def get_stats(days: int = 30):
     """
