@@ -273,10 +273,11 @@ Programs Mentioned: {', '.join(user_context.get('programs', []))}
 **YOUR TASK: Create helpful calendar events based on the conversation. Be proactive and helpful:**
 
 1. **EXPLICIT DEADLINES** - If the conversation mentions specific dates or deadlines:
-   - "Nov 1 – Jan 31" → Create events for both start and end dates
+   - "Nov 1 – Jan 31" → Create events for BOTH start date (Nov 1) AND end date (Jan 31)
+   - "Open enrollment Nov 1 – Jan 31" → Create TWO events: one for Nov 1 (starts) and one for Jan 31 (ends)
    - "60 days from job loss" → Calculate 60 days from today and create reminder
    - "File within 4 weeks" → Create reminder for 3 weeks from now (to give buffer)
-   - "Open enrollment Nov 1 – Jan 31" → Create events for both dates
+   - "Within 45 days" → Create reminder for 40 days from now (to give buffer)
 
 2. **URGENT ACTIONS** - If the conversation says "as soon as possible", "right away", "don't wait":
    - "Apply for UI as soon as possible" → Create reminder for tomorrow
