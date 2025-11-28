@@ -176,6 +176,20 @@ def generate_calendar_events(
             
             context_text, sources = run_in_thread(_get_rag_context_from_deric(query))
         
+            # Filter out generic holiday/closing date information from RAG context
+            # These are not user-specific and should not be in the calendar
+            if context_text:
+                # Check if RAG context contains generic holiday information
+                holiday_keywords = [
+                    "call center closed", "holiday", "new year's day", "martin luther king",
+                    "presidents' day", "memorial day", "independence day", "labor day",
+                    "veterans day", "thanksgiving", "christmas day", "cesar chavez day"
+                ]
+                context_lower = context_text.lower()
+                if any(keyword in context_lower for keyword in holiday_keywords):
+                    print(f"⚠️ RAG context contains generic holiday info - filtering it out")
+                    context_text = ""  # Don't use RAG context if it's just generic holidays
+        
             # Don't require RAG sources - we can extract dates directly from conversation
             # RAG context is helpful but not required if conversation has explicit dates
             if not context_text:
@@ -217,7 +231,17 @@ IMPORTANT: Extract dates directly from the conversation text. Look for:
 
 Focus on application deadlines, renewal dates, SAR-7 deadlines, open enrollment periods, and other time-sensitive actions."""
         
-        rag_section = f"\nRelevant Program Information (from RAG):\n{context_text[:2000]}" if context_text else ""
+        # Only include RAG context if it doesn't contain generic holidays
+        # and if conversation doesn't already have explicit dates
+        conversation_has_dates = any(
+            keyword in conversation_text.lower() 
+            for keyword in ["nov 1", "jan 31", "january 31", "november 1", "60 days", "enrollment", "deadline"]
+        )
+        
+        rag_section = ""
+        if context_text and not conversation_has_dates:
+            # Only use RAG if conversation doesn't have explicit dates
+            rag_section = f"\n\nAdditional Program Information (for reference only - do NOT create events from this unless mentioned in conversation):\n{context_text[:1000]}"
         
         user_prompt = f"""Based on this conversation, create calendar events for important dates and deadlines mentioned by the user.
 
