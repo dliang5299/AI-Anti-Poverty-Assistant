@@ -139,7 +139,7 @@ def chat(request: ChatRequest):
     try:
         # 1) Retrieve top-k context from Pinecone via your searcher
         initial_matches = searcher.search_vectors(request.message, limit=50)
-        matches = searcher.rerank_matches(request.message, initial_matches, top_n=25)
+        matches = searcher.rerank_matches(request.message, initial_matches, top_n=15)
         context = searcher.format_context(matches)
 
         # 2) Build the prompt
