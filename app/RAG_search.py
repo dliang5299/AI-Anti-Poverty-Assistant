@@ -34,7 +34,7 @@ class RAGSearcher:
         )
         return resp.data[0].embedding
 
-    def search_vectors(self, query: str, limit: int = 40) -> List[Dict[str, Any]]:
+    def search_vectors(self, query: str, limit: int) -> List[Dict[str, Any]]:
         qv = self.embed_query(query)
         res = self.index.query(vector=qv, top_k=limit, include_metadata=True)
 
@@ -55,7 +55,7 @@ class RAGSearcher:
             )
         return out
 
-    def rerank_matches(self, query: str, matches: List[Dict[str, Any]], top_n: int = 15) -> List[Dict[str, Any]]:
+    def rerank_matches(self, query: str, matches: List[Dict[str, Any]], top_n: int) -> List[Dict[str, Any]]:
         """
         Prefer a dedicated Bedrock reranker (if configured), otherwise fall back
         to LLM-based cross-encoder scoring. Always returns at most top_n items.
