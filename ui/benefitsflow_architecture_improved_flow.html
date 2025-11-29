@@ -48,8 +48,9 @@
         .flow-section {
             background-color: #ebf8ff;
             border-radius: 8px;
-            padding: 20px;
+            padding: 30px 20px;
             position: relative;
+            overflow: visible;
         }
         
         .section-title {
@@ -73,7 +74,7 @@
             border: 2px solid #90cdf4;
             border-radius: 8px;
             padding: 15px 10px;
-            width: 120px;
+            width: 140px;
             text-align: center;
             font-size: 0.9em;
             font-weight: 500;
@@ -83,6 +84,7 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
+            overflow: visible;
         }
         
         .step-num {
@@ -312,7 +314,8 @@
             gap: 15px;
             flex-wrap: nowrap;
             overflow-x: auto;
-            padding: 5px;
+            overflow-y: visible;
+            padding: 15px 5px;
         }
     </style>
 </head>
@@ -366,8 +369,8 @@
                     <div class="arrow-vertical">↓</div>
                 </div>
                 
-                <div style="display: flex; justify-content: center; gap: 20px;">
-                    <div class="component aws" style="width: 160px;">
+                <div style="display: flex; justify-content: center; gap: 20px; padding: 15px 0;">
+                    <div class="component aws">
                         <div class="aws-label">AWS</div>
                         <div class="step-num">5</div>
                         <div class="component-icon">🗃️</div>
@@ -377,7 +380,7 @@
                     
                     <div style="font-size: 1.5em; margin-top: 50px;">+</div>
                     
-                    <div class="component aws" style="width: 160px;">
+                    <div class="component aws">
                         <div class="aws-label">AWS</div>
                         <div class="step-num">6</div>
                         <div class="component-icon">💾</div>
