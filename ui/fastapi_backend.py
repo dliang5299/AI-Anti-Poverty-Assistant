@@ -1010,8 +1010,8 @@ async def admin_dashboard(days: int = 30):
             <div class="download-section">
                 <h2>📥 Download Reports</h2>
                 <p>Export metrics data as CSV files or view JSON stats online.</p>
-                <a href="/api/admin/export/csv" class="download-btn">Download CSV Report</a>
-                <a href="/api/admin/stats?days={days}" target="_blank" class="download-btn" style="background: #3498db;">View JSON Stats</a>
+                <a href="/admin/export/csv" class="download-btn">Download CSV Report</a>
+                <a href="/admin/stats?days={days}" target="_blank" class="download-btn" style="background: #3498db;">View JSON Stats</a>
             </div>
             
             <div class="stats-grid" style="margin-top: 20px;">
