@@ -119,6 +119,47 @@ static_dir = Path(__file__).parent
 if (static_dir / "images").exists():
     app.mount("/images", StaticFiles(directory=str(static_dir / "images")), name="images")
 
+# Serve favicon files
+@app.get("/favicon.ico")
+async def favicon_ico():
+    """Serve favicon.ico"""
+    favicon_path = static_dir / "favicon.ico"
+    if favicon_path.exists():
+        return FileResponse(str(favicon_path), media_type="image/x-icon")
+    raise HTTPException(status_code=404)
+
+@app.get("/favicon-16x16.png")
+async def favicon_16():
+    """Serve 16x16 favicon"""
+    favicon_path = static_dir / "favicon-16x16.png"
+    if favicon_path.exists():
+        return FileResponse(str(favicon_path), media_type="image/png")
+    raise HTTPException(status_code=404)
+
+@app.get("/favicon-32x32.png")
+async def favicon_32():
+    """Serve 32x32 favicon"""
+    favicon_path = static_dir / "favicon-32x32.png"
+    if favicon_path.exists():
+        return FileResponse(str(favicon_path), media_type="image/png")
+    raise HTTPException(status_code=404)
+
+@app.get("/apple-touch-icon.png")
+async def apple_touch_icon():
+    """Serve Apple touch icon"""
+    icon_path = static_dir / "apple-touch-icon.png"
+    if icon_path.exists():
+        return FileResponse(str(icon_path), media_type="image/png")
+    raise HTTPException(status_code=404)
+
+@app.get("/site.webmanifest")
+async def site_webmanifest():
+    """Serve site.webmanifest"""
+    manifest_path = static_dir / "site.webmanifest"
+    if manifest_path.exists():
+        return FileResponse(str(manifest_path), media_type="application/manifest+json")
+    raise HTTPException(status_code=404)
+
 # API Endpoints
 
 @app.get("/", response_class=HTMLResponse)
