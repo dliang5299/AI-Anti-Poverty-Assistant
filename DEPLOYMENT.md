@@ -6,7 +6,8 @@
 - Docker and docker-compose installed
 - AWS credentials configured (IAM role or ~/.aws/credentials)
 - Security group allows:
-  - Port 8501 (UI service)
+  - Port 80 (HTTP - Nginx reverse proxy)
+  - Port 8501 (UI service - optional, for direct access)
   - Port 8000 (RAG service - optional, for testing)
 
 ## Quick Setup (One-Time)
@@ -46,7 +47,7 @@ sudo systemctl start benefitsflow.service
 Your app will now:
 - ✅ Start automatically when instance boots
 - ✅ Restart automatically if containers crash
-- ✅ Be accessible at: `http://YOUR_EC2_IP:8501`
+- ✅ Be accessible at: `http://YOUR_EC2_IP` or `http://benefitsflow.org` (no port needed!)
 
 ## Manual Deployment (If Not Using Auto-Start)
 
@@ -133,8 +134,9 @@ curl http://localhost:8501/health/rag
 
 ### 6. Access the Application
 
-- **UI Frontend**: `http://YOUR_EC2_IP:8501` or `http://YOUR_ELASTIC_IP:8501`
-- **API Docs**: `http://YOUR_EC2_IP:8501/api/docs`
+- **UI Frontend**: `http://YOUR_EC2_IP` or `http://benefitsflow.org` (via Nginx on port 80)
+- **UI Direct**: `http://YOUR_EC2_IP:8501` (optional, direct access)
+- **API Docs**: `http://YOUR_EC2_IP/api/docs` or `http://benefitsflow.org/api/docs`
 - **RAG Health**: `http://YOUR_EC2_IP:8000/health` (optional)
 
 ## Useful Commands
@@ -147,6 +149,7 @@ docker-compose logs -f
 # Specific service
 docker-compose logs -f app    # RAG service
 docker-compose logs -f ui     # UI service
+docker-compose logs -f nginx  # Nginx reverse proxy
 ```
 
 ### Stop Services
@@ -205,7 +208,8 @@ aws sts get-caller-identity
 ## Security Group Rules
 
 Ensure your EC2 security group allows:
-- **Inbound Port 8501** (UI service) - from your IP or 0.0.0.0/0 for demo
+- **Inbound Port 80** (HTTP - Nginx reverse proxy) - from 0.0.0.0/0 for public access
+- **Inbound Port 8501** (UI service) - optional, only if you want direct access
 - **Inbound Port 8000** (RAG service) - optional, only if you want direct access
 - **Outbound** - All traffic (for AWS API calls)
 
