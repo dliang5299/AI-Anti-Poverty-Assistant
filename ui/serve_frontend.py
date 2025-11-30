@@ -83,6 +83,24 @@ async def apple_touch_icon():
     from fastapi import HTTPException
     raise HTTPException(status_code=404)
 
+@app.get("/android-chrome-192x192.png")
+async def android_chrome_192():
+    """Serve Android Chrome 192x192 icon"""
+    icon_path = ui_dir / "android-chrome-192x192.png"
+    if icon_path.exists():
+        return FileResponse(str(icon_path), media_type="image/png")
+    from fastapi import HTTPException
+    raise HTTPException(status_code=404)
+
+@app.get("/android-chrome-512x512.png")
+async def android_chrome_512():
+    """Serve Android Chrome 512x512 icon"""
+    icon_path = ui_dir / "android-chrome-512x512.png"
+    if icon_path.exists():
+        return FileResponse(str(icon_path), media_type="image/png")
+    from fastapi import HTTPException
+    raise HTTPException(status_code=404)
+
 @app.get("/site.webmanifest")
 async def site_webmanifest():
     """Serve site.webmanifest"""
