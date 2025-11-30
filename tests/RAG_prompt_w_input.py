@@ -45,7 +45,7 @@ def load_questions_from_gold(
         gold_by_id: DataFrame indexed by id so we can look up gold_context/response
     """
     df_input = pd.read_csv(csv_path)
-    df_input = df_input[df_input['Status'] == "Done"]
+    df_input = df_input[df_input['Status'] == "DONE"]
     prompts_df = df_input.drop_duplicates(subset=["user_question"], keep="first")
     user_prompts = prompts_df["user_question"].dropna().tolist()
     id_map = dict(zip(prompts_df["user_question"], prompts_df["id"]))
