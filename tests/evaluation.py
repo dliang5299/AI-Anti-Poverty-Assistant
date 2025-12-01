@@ -28,7 +28,7 @@ from readability import Readability
 import nltk
 from nltk.sentiment import SentimentIntensityAnalyzer
 
-from openai import OpenAI, AsyncOpenAI
+from openai import AsyncOpenAI
 
 from ragas.metrics.collections import AnswerAccuracy
 from ragas.llms import llm_factory
