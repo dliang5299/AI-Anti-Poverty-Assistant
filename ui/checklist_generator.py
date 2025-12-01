@@ -248,8 +248,7 @@ Return ONLY valid JSON array, no other text."""
             response = bedrock.converse(
                 modelId=LLM_MODEL,
                 messages=[{"role": "user", "content": [{"text": user_prompt}]}],
-                system=[{"text": system_prompt}],
-                inferenceConfig={"maxTokens": 2000, "temperature": 0.3}
+                system=[{"text": system_prompt}]
             )
             
             text = _extract_text_from_bedrock(response)
