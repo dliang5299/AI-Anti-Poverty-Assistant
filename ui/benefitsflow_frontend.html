@@ -124,9 +124,19 @@
             overflow-y: auto;
             transition: transform 0.3s ease;
         }
+        
+        /* On wide screens, always show sidebar */
+        @media (min-width: 769px) {
+            .sidebar {
+                transform: translateX(0) !important;
+            }
+        }
 
-        .sidebar.hidden {
-            transform: translateX(-100%);
+        /* Hide sidebar on mobile when .hidden class is present */
+        @media (max-width: 768px) {
+            .sidebar.hidden {
+                transform: translateX(-100%);
+            }
         }
 
         .sidebar h3 {
@@ -863,6 +873,17 @@
                 bottom: 0;
                 z-index: 90;
                 box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+                transform: translateX(-100%);
+            }
+            
+            /* Show sidebar when menu button is clicked (when not hidden) */
+            .sidebar:not(.hidden) {
+                transform: translateX(0);
+            }
+            
+            /* Keep sidebar hidden when hidden class is present */
+            .sidebar.hidden {
+                transform: translateX(-100%);
             }
 
             .menu-btn {
@@ -918,7 +939,7 @@
     <!-- Main Container -->
     <div class="container">
         <!-- Sidebar -->
-        <aside class="sidebar" id="sidebar">
+        <aside class="sidebar hidden" id="sidebar">
             <div class="sidebar-section">
                 <h3>📊 Your Session</h3>
                 <div id="programsList">
