@@ -125,17 +125,15 @@
             transition: transform 0.3s ease;
         }
         
-        /* On wide screens, always show sidebar */
+        /* On wide screens (desktop/laptop), always show sidebar */
         @media (min-width: 769px) {
             .sidebar {
                 transform: translateX(0) !important;
+                position: relative;
             }
-        }
-
-        /* Hide sidebar on mobile when .hidden class is present */
-        @media (max-width: 768px) {
-            .sidebar.hidden {
-                transform: translateX(-100%);
+            /* Hide menu button on desktop since sidebar is always visible */
+            .menu-btn {
+                display: none;
             }
         }
 
@@ -873,10 +871,11 @@
                 bottom: 0;
                 z-index: 90;
                 box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+                /* Hidden by default on mobile */
                 transform: translateX(-100%);
             }
             
-            /* Show sidebar when menu button is clicked (when not hidden) */
+            /* Show sidebar when menu button is clicked (when hidden class is removed) */
             .sidebar:not(.hidden) {
                 transform: translateX(0);
             }
@@ -939,7 +938,7 @@
     <!-- Main Container -->
     <div class="container">
         <!-- Sidebar -->
-        <aside class="sidebar hidden" id="sidebar">
+        <aside class="sidebar" id="sidebar">
             <div class="sidebar-section">
                 <h3>📊 Your Session</h3>
                 <div id="programsList">
@@ -1410,6 +1409,34 @@
         function toggleSidebar() {
             document.getElementById('sidebar').classList.toggle('hidden');
         }
+        
+        // Initialize sidebar based on screen size
+        function initializeSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const isMobile = window.innerWidth <= 768;
+            
+            if (isMobile) {
+                // Hide sidebar by default on mobile
+                sidebar.classList.add('hidden');
+            } else {
+                // Show sidebar by default on desktop
+                sidebar.classList.remove('hidden');
+            }
+        }
+        
+        // Run on page load
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initializeSidebar);
+        } else {
+            initializeSidebar();
+        }
+        
+        // Update on window resize
+        let resizeTimer;
+        window.addEventListener('resize', function() {
+            clearTimeout(resizeTimer);
+            resizeTimer = setTimeout(initializeSidebar, 250);
+        });
 
         // Quick start buttons
         function quickStart(topic) {
