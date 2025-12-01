@@ -107,6 +107,7 @@ class DownloadRequest(BaseModel):
     situation: Optional[str] = None
     conversation_history: List[Dict[str, Any]] = []
     programs: List[str] = []
+    checklist_items: Optional[List[Dict[str, Any]]] = None  # Pre-generated checklist items for fast PDF generation
 
 class ChecklistPreviewResponse(BaseModel):
     checklist_items: List[Dict[str, Any]] = []
@@ -723,23 +724,29 @@ async def download_checklist(request: DownloadRequest):
                 if keyword in content:
                     all_programs.add(program)
         
-        # Generate checklist using UI generator (uses Deric's RAG service internally)
+        # Use pre-generated checklist items if provided (fast path), otherwise generate
         checklist_items = []
-        try:
-            print(f"DEBUG: Generating checklist - conversation history length: {len(request.conversation_history)}")
-            print(f"DEBUG: Programs extracted: {list(all_programs)}")
-            
-            user_context = {
-                "situation": request.situation,
-                "programs": list(all_programs)
-            }
-            checklist_items = generate_checklist(request.conversation_history, user_context)
-            print(f"DEBUG: Checklist items generated: {len(checklist_items)}")
-        except Exception as e:
-            print(f"Error generating checklist: {e}")
-            import traceback
-            traceback.print_exc()
-            checklist_items = []
+        if request.checklist_items and len(request.checklist_items) > 0:
+            # Use pre-generated checklist items - instant PDF generation!
+            checklist_items = request.checklist_items
+            print(f"DEBUG: Using pre-generated checklist items: {len(checklist_items)}")
+        else:
+            # Generate checklist using UI generator (uses Deric's RAG service internally)
+            try:
+                print(f"DEBUG: Generating checklist - conversation history length: {len(request.conversation_history)}")
+                print(f"DEBUG: Programs extracted: {list(all_programs)}")
+                
+                user_context = {
+                    "situation": request.situation,
+                    "programs": list(all_programs)
+                }
+                checklist_items = generate_checklist(request.conversation_history, user_context)
+                print(f"DEBUG: Checklist items generated: {len(checklist_items)}")
+            except Exception as e:
+                print(f"Error generating checklist: {e}")
+                import traceback
+                traceback.print_exc()
+                checklist_items = []
         
         if not checklist_items or len(checklist_items) == 0:
             # Return fallback PDF if no items generated
