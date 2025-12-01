@@ -257,13 +257,19 @@ Return ONLY valid JSON array, no other text."""
             if not text:
                 print("DEBUG: Bedrock returned empty text")
                 return []
+            
+            # Debug: Print first 500 chars of response to see what we got
+            print(f"DEBUG: Bedrock response preview: {text[:500]}")
         except Exception as e:
             print(f"DEBUG: Bedrock error: {e}")
+            import traceback
+            traceback.print_exc()
             return []
         
         # Parse JSON response
         try:
             # Extract JSON from response (might have markdown code blocks)
+            original_text = text
             text = text.strip()
             if text.startswith("```json"):
                 text = text[7:]
@@ -273,7 +279,11 @@ Return ONLY valid JSON array, no other text."""
                 text = text[:-3]
             text = text.strip()
             
+            print(f"DEBUG: Attempting to parse JSON, length after cleanup: {len(text)}")
+            print(f"DEBUG: JSON preview: {text[:300]}")
+            
             checklist_items = json.loads(text)
+            print(f"DEBUG: Successfully parsed JSON, got {len(checklist_items) if isinstance(checklist_items, list) else 'not a list'} items")
             
             if not isinstance(checklist_items, list):
                 return []
@@ -294,6 +304,9 @@ Return ONLY valid JSON array, no other text."""
             
         except json.JSONDecodeError as e:
             print(f"Error parsing checklist JSON: {e}")
+            print(f"DEBUG: Failed JSON text (first 1000 chars): {text[:1000] if 'text' in locals() else 'N/A'}")
+            import traceback
+            traceback.print_exc()
             return []
             
     except Exception as e:
