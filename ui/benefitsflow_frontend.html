@@ -934,7 +934,7 @@
     <!-- Header -->
     <header class="header">
         <div class="logo-container">
-            <img src="images/Logo.png" alt="BenefitsFlow Logo">
+            <img src="images/New_Logo.png" alt="BenefitsFlow Logo">
             <div>
                 <div class="brand-name">BenefitsFlow</div>
                 <div class="brand-tagline">Your California Benefits Navigator</div>
@@ -977,7 +977,7 @@
             <!-- Landing View -->
             <div class="landing-view" id="landingView">
                 <div class="hero-icon">
-                    <img src="images/Logo.png" alt="BenefitsFlow Logo">
+                    <img src="images/New_Logo.png" alt="BenefitsFlow Logo">
                 </div>
                 <h1>Find the Right Benefits for Your Situation</h1>
                 <p>Get personalized guidance on California's public assistance programs. We'll help you navigate food assistance, healthcare, cash aid, and more.</p>
@@ -1079,7 +1079,7 @@
         <div class="loading-indicator" id="loadingIndicator">
             <div class="spinner"></div>
             <div class="loading-text" id="loadingText">Generating your personalized checklist...</div>
-            <div class="loading-subtext" id="loadingSubtext">This may take a moment</div>
+            <div class="loading-subtext" id="loadingSubtext">Sit tight! This will take about 20-30 seconds</div>
         </div>
     </div>
 
@@ -1358,8 +1358,8 @@
                 }
             }
             
-            // Build HTML table
-            let html = '<table style="border-collapse: collapse; width: 100%; margin: 10px 0; font-size: 0.9em;">';
+            // Build HTML table with mobile-responsive wrapper
+            let html = '<div style="overflow-x: auto; margin: 10px 0; background: var(--bg-color); padding: 10px; border-radius: 8px;"><table style="border-collapse: collapse; width: 100%; min-width: 500px; font-size: 0.9em;">';
             
             // Header
             html += '<thead><tr>';
@@ -1382,7 +1382,7 @@
                 html += '</tbody>';
             }
             
-            html += '</table>';
+            html += '</table></div>';
             return html;
         }
 
@@ -1415,7 +1415,12 @@
 
         // Toggle sidebar on mobile
         function toggleSidebar() {
-            document.getElementById('sidebar').classList.toggle('hidden');
+            const sidebar = document.getElementById('sidebar');
+            if (sidebar) {
+                sidebar.classList.toggle('hidden');
+                // Force reflow to ensure CSS transition works
+                void sidebar.offsetWidth;
+            }
         }
         
         // Initialize sidebar based on screen size
@@ -1622,7 +1627,15 @@
             `;
             
             chatMessages.appendChild(messageDiv);
-            chatMessages.scrollTop = chatMessages.scrollHeight;
+            
+            // Only auto-scroll for user messages. For bot messages, scroll to the top of the message
+            if (role === 'user') {
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+            } else {
+                // Scroll to show the beginning of the bot's response
+                const messageTop = messageDiv.offsetTop;
+                chatMessages.scrollTop = messageTop - 20; // 20px padding from top
+            }
             
             messages.push({role, content: text, sources});
             
@@ -1811,7 +1824,7 @@
         }
 
         // Show loading indicator
-        function showLoading(text = 'Generating...', subtext = 'This may take a moment') {
+        function showLoading(text = 'Generating...', subtext = 'Sit tight! This will take about 20-30 seconds') {
             const overlay = document.getElementById('loadingOverlay');
             const loadingText = document.getElementById('loadingText');
             const loadingSubtext = document.getElementById('loadingSubtext');

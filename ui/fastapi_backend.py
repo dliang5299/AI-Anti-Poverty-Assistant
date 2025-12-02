@@ -265,15 +265,20 @@ async def chat_endpoint(request: ChatRequest):
         raise HTTPException(status_code=500, detail=f"Error processing chat: {str(e)}")
 
 def _escape_xml(text: str) -> str:
-    """Escape XML/HTML special characters for safe PDF generation"""
+    """Escape XML/HTML special characters for safe PDF generation, but preserve phone number formatting"""
     if not text:
         return ""
-    return (str(text)
-            .replace("&", "&amp;")
-            .replace("<", "&lt;")
-            .replace(">", "&gt;")
-            .replace('"', "&quot;")
-            .replace("'", "&apos;"))
+    # Preserve hyphens in phone numbers (format: XXX-XXX-XXXX or (XXX) XXX-XXXX)
+    # We'll escape everything else, but phone numbers with hyphens should be preserved
+    text_str = str(text)
+    # Escape special characters
+    escaped = (text_str
+               .replace("&", "&amp;")
+               .replace("<", "&lt;")
+               .replace(">", "&gt;")
+               .replace('"', "&quot;")
+               .replace("'", "&apos;"))
+    return escaped
 
 def generate_checklist_pdf(checklist_items: List[Dict[str, Any]], situation: str, programs: List[str]) -> bytes:
     """
@@ -417,9 +422,10 @@ def generate_checklist_pdf(checklist_items: List[Dict[str, Any]], situation: str
         if not isinstance(item, dict):
             continue
         
-        # Item number and title with checkbox
+        # Item number and title with checkbox (use simple bracket format for better PDF compatibility)
         title = _escape_xml(item.get('title', 'Item'))
-        item_header = f"☐ {i}. {title}"
+        # Use [ ] format which is more universally supported in PDF fonts
+        item_header = f"[ ] {i}. {title}"
         elements.append(Paragraph(item_header, item_title_style))
         
         # Description
@@ -846,8 +852,8 @@ async def download_calendar(request: DownloadRequest):
             events.append(f"""BEGIN:VEVENT
 UID:benefitsflow-context-needed@benefitsflow.com
 DTSTAMP:{datetime.now().strftime('%Y%m%dT%H%M%SZ')}
-DTSTART:{base_date.strftime('%Y%m%dT090000Z')}
-DTEND:{base_date.strftime('%Y%m%dT100000Z')}
+DTSTART;TZID=America/Los_Angeles:{base_date.strftime('%Y%m%d')}T090000
+DTEND;TZID=America/Los_Angeles:{base_date.strftime('%Y%m%d')}T100000
 SUMMARY:Continue Conversation for Personalized Calendar
 DESCRIPTION:Not enough context from our conversation to generate personalized calendar events. Please continue chatting with the assistant about your specific situation, programs you're interested in, and any deadlines or important dates. Then try downloading your calendar again.
 LOCATION:BenefitsFlow Chat
@@ -858,11 +864,13 @@ END:VEVENT""")
             for event in events_data:
                 try:
                     event_date = datetime.strptime(event['start_date'], "%Y-%m-%d")
+                    # Set time to 9am in Pacific Time (America/Los_Angeles)
+                    # Use local time format (no Z suffix) with TZID
                     events.append(f"""BEGIN:VEVENT
 UID:benefitsflow-{event_num}@benefitsflow.com
 DTSTAMP:{datetime.now().strftime('%Y%m%dT%H%M%SZ')}
-DTSTART:{event_date.strftime('%Y%m%dT090000Z')}
-DTEND:{event_date.strftime('%Y%m%dT100000Z')}
+DTSTART;TZID=America/Los_Angeles:{event_date.strftime('%Y%m%d')}T090000
+DTEND;TZID=America/Los_Angeles:{event_date.strftime('%Y%m%d')}T100000
 SUMMARY:{event.get('summary', 'Important Date')}
 DESCRIPTION:{event.get('description', '')}
 LOCATION:Online Application
