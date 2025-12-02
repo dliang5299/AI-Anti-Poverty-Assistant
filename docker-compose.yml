@@ -47,8 +47,11 @@ services:
     image: nginx:alpine
     ports:
       - "80:80"
+      - "443:443"
     volumes:
       - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - /etc/letsencrypt/live/benefitsflow.org:/etc/letsencrypt/live/benefitsflow.org:ro
+      - /etc/letsencrypt/archive/benefitsflow.org:/etc/letsencrypt/archive/benefitsflow.org:ro
     depends_on:
       - ui
     networks:

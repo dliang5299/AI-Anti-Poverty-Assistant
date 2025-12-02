@@ -124,9 +124,17 @@
             overflow-y: auto;
             transition: transform 0.3s ease;
         }
-
-        .sidebar.hidden {
-            transform: translateX(-100%);
+        
+        /* On wide screens (desktop/laptop), always show sidebar */
+        @media (min-width: 769px) {
+            .sidebar {
+                transform: translateX(0) !important;
+                position: relative;
+            }
+            /* Hide menu button on desktop since sidebar is always visible */
+            .menu-btn {
+                display: none;
+            }
         }
 
         .sidebar h3 {
@@ -863,6 +871,18 @@
                 bottom: 0;
                 z-index: 90;
                 box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+                /* Hidden by default on mobile - always start hidden */
+                transform: translateX(-100%);
+            }
+            
+            /* Show sidebar only when it doesn't have hidden class AND user clicked menu */
+            .sidebar:not(.hidden) {
+                transform: translateX(0);
+            }
+            
+            /* Explicitly hide when hidden class is present */
+            .sidebar.hidden {
+                transform: translateX(-100%) !important;
             }
 
             .menu-btn {
@@ -901,6 +921,14 @@
             }
         }
     </style>
+    <!-- Immediate mobile sidebar hide - prevents flash before JS loads -->
+    <style>
+        @media (max-width: 768px) {
+            #sidebar {
+                transform: translateX(-100%) !important;
+            }
+        }
+    </style>
 </head>
 <body>
     <!-- Header -->
@@ -918,7 +946,7 @@
     <!-- Main Container -->
     <div class="container">
         <!-- Sidebar -->
-        <aside class="sidebar" id="sidebar">
+        <aside class="sidebar hidden" id="sidebar">
             <div class="sidebar-section">
                 <h3>📊 Your Session</h3>
                 <div id="programsList">
@@ -1389,6 +1417,35 @@
         function toggleSidebar() {
             document.getElementById('sidebar').classList.toggle('hidden');
         }
+        
+        // Initialize sidebar based on screen size
+        function initializeSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            if (!sidebar) return;
+            
+            const isMobile = window.innerWidth <= 768;
+            
+            if (isMobile) {
+                // Ensure sidebar is hidden on mobile
+                sidebar.classList.add('hidden');
+            } else {
+                // Show sidebar on desktop - remove hidden class
+                sidebar.classList.remove('hidden');
+            }
+        }
+        
+        // Run immediately and on page load
+        initializeSidebar();
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initializeSidebar);
+        }
+        
+        // Update on window resize
+        let resizeTimer;
+        window.addEventListener('resize', function() {
+            clearTimeout(resizeTimer);
+            resizeTimer = setTimeout(initializeSidebar, 250);
+        });
 
         // Quick start buttons
         function quickStart(topic) {
@@ -1718,6 +1775,9 @@
 
                 const data = await response.json();
                 
+                // Store checklist items for fast PDF generation
+                window.currentChecklistItems = data.checklist_items || [];
+                
                 if (!data.has_sufficient_context) {
                     content.innerHTML = `<div style="padding: 1rem; text-align: center; color: var(--text-muted);">
                         <p>${data.message || 'Not enough conversation context to generate a personalized checklist.'}</p>
@@ -1796,7 +1856,14 @@
 
         // Download PDF checklist
         async function downloadPDF() {
-            showLoading('Preparing your checklist...', 'Analyzing your conversation');
+            // Use pre-generated checklist items if available (instant PDF generation)
+            const hasPreGeneratedItems = window.currentChecklistItems && window.currentChecklistItems.length > 0;
+            
+            if (hasPreGeneratedItems) {
+                showLoading('Generating PDF...', 'Formatting your checklist');
+            } else {
+                showLoading('Preparing your checklist...', 'Analyzing your conversation');
+            }
             
             try {
                 // Collect all programs mentioned in conversation
@@ -1809,13 +1876,21 @@
                         content: msg.content,
                         sources: msg.sources || []
                     })),
-                    programs: allPrograms
+                    programs: allPrograms,
+                    checklist_items: hasPreGeneratedItems ? window.currentChecklistItems : null  // Send pre-generated items for instant PDF
                 };
                 
-                console.log('Sending checklist download request:', requestBody);
+                console.log('Sending checklist download request:', hasPreGeneratedItems ? 'Using pre-generated items (fast)' : 'Generating new checklist');
                 
-                // Update progress message before starting the fetch
-                updateLoading('Fetching relevant information...', 'Searching benefit programs');
+                if (!hasPreGeneratedItems) {
+                    // Update progress message before starting the fetch
+                    updateLoading('Fetching relevant information...', 'Searching benefit programs');
+                    
+                    // Update progress message after a short delay (while fetch is in progress)
+                    setTimeout(() => {
+                        updateLoading('Generating with AI...', 'Creating your personalized checklist');
+                    }, 1000);
+                }
                 
                 // Start the fetch - this is where the actual generation happens
                 const fetchPromise = fetch(`${API_BASE_URL}/download/checklist`, {
@@ -1825,11 +1900,6 @@
                     },
                     body: JSON.stringify(requestBody)
                 });
-                
-                // Update progress message after a short delay (while fetch is in progress)
-                setTimeout(() => {
-                    updateLoading('Generating with AI...', 'Creating your personalized checklist');
-                }, 1000);
                 
                 // Wait for the response - loading indicator stays visible during this entire time
                 const response = await fetchPromise;
