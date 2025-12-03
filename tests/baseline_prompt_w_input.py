@@ -4,7 +4,6 @@ from datetime import datetime
 from tests.evaluation import evaluate_response
 
 from dotenv import load_dotenv
-import os
 load_dotenv()  # loads .env into environment variables
 
 REGION = "us-west-2"
