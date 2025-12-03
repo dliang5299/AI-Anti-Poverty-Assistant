@@ -49,11 +49,54 @@ def _discover_secret_arn_by_name(
     name_patterns: List[str],
     region: str = "us-west-2"
 ) -> Optional[str]:
-    """Auto-discover secret ARN by searching for secrets matching name patterns."""
+    """
+    Auto-discover secret ARN by trying common secret names directly.
+    Works with IAM permissions that allow GetSecretValue and DescribeSecret.
+    """
+    sm = boto3.client("secretsmanager", region_name=region)
+    
+    # Try each pattern as a direct secret name/ARN
+    for pattern in name_patterns:
+        # Try as direct name (AWS Secrets Manager accepts names or ARNs)
+        for secret_name_variant in [
+            pattern,
+            f"benefitsflow/{pattern}",
+            f"benefitsflow-{pattern}",
+            f"{pattern}-api-key",
+            f"benefitsflow/{pattern}-api-key"
+        ]:
+            try:
+                # Try to describe the secret (works with DescribeSecret permission)
+                try:
+                    resp = sm.describe_secret(SecretId=secret_name_variant)
+                    arn = resp.get("ARN")
+                    if arn:
+                        print(f"✅ Auto-discovered secret: {secret_name_variant} -> {arn}")
+                        return arn
+                except sm.exceptions.ResourceNotFoundException:
+                    continue  # Try next variant
+                except Exception as e:
+                    # If DescribeSecret fails, try ListSecrets as fallback
+                    if "ListSecrets" in str(e) or "AccessDenied" in str(e):
+                        # Don't have ListSecrets permission, try direct access
+                        try:
+                            # Try to get the secret value directly (if name works)
+                            sm.get_secret_value(SecretId=secret_name_variant)
+                            # If that works, construct ARN from name
+                            # Format: arn:aws:secretsmanager:REGION:ACCOUNT:secret:NAME-XXXXXX
+                            # We can't get account ID easily, so try to use name as-is
+                            print(f"✅ Found secret by name: {secret_name_variant}")
+                            return secret_name_variant  # Return name, AWS accepts it
+                        except:
+                            continue
+                    else:
+                        continue
+            except Exception:
+                continue
+    
+    # Fallback: Try ListSecrets if available (may not have permission)
     try:
-        sm = boto3.client("secretsmanager", region_name=region)
         paginator = sm.get_paginator("list_secrets")
-        
         for page in paginator.paginate():
             for secret in page.get("SecretList", []):
                 secret_name = secret.get("Name", "").lower()
@@ -61,10 +104,12 @@ def _discover_secret_arn_by_name(
                     if pattern.lower() in secret_name:
                         arn = secret.get("ARN")
                         if arn:
-                            print(f"✅ Auto-discovered secret: {secret_name} -> {arn}")
+                            print(f"✅ Auto-discovered secret via ListSecrets: {secret_name} -> {arn}")
                             return arn
     except Exception as e:
-        print(f"⚠️ Warning: Could not auto-discover secret: {e}")
+        # ListSecrets not available - that's okay, we tried direct access above
+        pass
+    
     return None
 
 
