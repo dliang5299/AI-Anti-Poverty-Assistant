@@ -3,7 +3,7 @@ import os
 import re
 import json
 from functools import lru_cache
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, List
 
 import boto3
 
@@ -39,6 +39,33 @@ def _secret_region_for(secret_id: str, hint_region: Optional[str] = None) -> str
         or _get_env("SECRET_REGION")
         or (hint_region or _region_fallback())
     )
+
+
+# ========================
+# SECRET DISCOVERY
+# ========================
+
+def _discover_secret_arn_by_name(
+    name_patterns: List[str],
+    region: str = "us-west-2"
+) -> Optional[str]:
+    """Auto-discover secret ARN by searching for secrets matching name patterns."""
+    try:
+        sm = boto3.client("secretsmanager", region_name=region)
+        paginator = sm.get_paginator("list_secrets")
+        
+        for page in paginator.paginate():
+            for secret in page.get("SecretList", []):
+                secret_name = secret.get("Name", "").lower()
+                for pattern in name_patterns:
+                    if pattern.lower() in secret_name:
+                        arn = secret.get("ARN")
+                        if arn:
+                            print(f"✅ Auto-discovered secret: {secret_name} -> {arn}")
+                            return arn
+    except Exception as e:
+        print(f"⚠️ Warning: Could not auto-discover secret: {e}")
+    return None
 
 
 # ========================
@@ -123,8 +150,21 @@ def get_openai_api_key() -> str:
 
     # Otherwise use the dedicated secret
     secret_id = _get_env("OPENAI_API_KEY_SECRET_ARN")
+    
+    # Auto-discover secret if ARN not provided (works with IAM permissions)
     if not secret_id:
-        raise RuntimeError("OPENAI_API_KEY_SECRET_ARN is required.")
+        hint_region = _get_env("OPENAI_SECRET_REGION") or get_regions()["bedrock"]
+        print("🔍 Auto-discovering OpenAI API key secret...")
+        secret_id = _discover_secret_arn_by_name(
+            ["openai", "openai-api-key", "benefitsflow/openai"],
+            region=hint_region
+        )
+    
+    if not secret_id:
+        raise RuntimeError(
+            "OPENAI_API_KEY_SECRET_ARN is required, or a secret containing 'openai' "
+            "must exist in AWS Secrets Manager."
+        )
 
     hint = _get_env("OPENAI_SECRET_REGION") or get_regions()["bedrock"]
     key = _fetch_secret(secret_id, hint_region=hint, prefer_key="OPENAI_API_KEY")
@@ -143,8 +183,21 @@ def get_pinecone_api_key() -> str:
 
     # Otherwise use the dedicated secret
     secret_id = _get_env("PINECONE_API_KEY_SECRET_ARN")
+    
+    # Auto-discover secret if ARN not provided (works with IAM permissions)
     if not secret_id:
-        raise RuntimeError("PINECONE_API_KEY_SECRET_ARN is required.")
+        hint_region = _get_env("PINECONE_SECRET_REGION") or get_regions()["pinecone"]
+        print("🔍 Auto-discovering Pinecone API key secret...")
+        secret_id = _discover_secret_arn_by_name(
+            ["pinecone", "pinecone-api-key", "benefitsflow/pinecone"],
+            region=hint_region
+        )
+    
+    if not secret_id:
+        raise RuntimeError(
+            "PINECONE_API_KEY_SECRET_ARN is required, or a secret containing 'pinecone' "
+            "must exist in AWS Secrets Manager."
+        )
 
     hint = _get_env("PINECONE_SECRET_REGION") or get_regions()["pinecone"]
     key = _fetch_secret(secret_id, hint_region=hint, prefer_key="PINECONE_API_KEY")
