@@ -52,64 +52,68 @@ def _discover_secret_arn_by_name(
     """
     Auto-discover secret ARN by trying common secret names directly.
     Works with IAM permissions that allow GetSecretValue and DescribeSecret.
+    AWS Secrets Manager names have format: benefitsflow/secret-name-RANDOM_SUFFIX
     """
     sm = boto3.client("secretsmanager", region_name=region)
     
     # Try each pattern as a direct secret name/ARN
+    # AWS Secrets Manager accepts partial names - it will find the secret even with suffix
     for pattern in name_patterns:
-        # Try as direct name (AWS Secrets Manager accepts names or ARNs)
+        # Try various name formats (AWS adds random suffix, but partial names work)
         for secret_name_variant in [
-            pattern,
-            f"benefitsflow/{pattern}",
-            f"benefitsflow-{pattern}",
-            f"{pattern}-api-key",
-            f"benefitsflow/{pattern}-api-key"
+            f"benefitsflow/{pattern}-api-key",  # Most likely: benefitsflow/openai-api-key-XXXXXX
+            f"benefitsflow/{pattern}",           # Alternative: benefitsflow/openai-XXXXXX
+            f"benefitsflow-{pattern}-api-key",  # Alternative format
+            f"{pattern}-api-key",                # Without prefix
+            pattern,                              # Just the pattern
         ]:
             try:
-                # Try to describe the secret (works with DescribeSecret permission)
+                # Strategy 1: Try DescribeSecret first (gets full ARN)
                 try:
                     resp = sm.describe_secret(SecretId=secret_name_variant)
                     arn = resp.get("ARN")
                     if arn:
-                        print(f"✅ Auto-discovered secret: {secret_name_variant} -> {arn}")
+                        print(f"✅ Auto-discovered secret via DescribeSecret: {secret_name_variant} -> {arn}")
                         return arn
                 except sm.exceptions.ResourceNotFoundException:
-                    continue  # Try next variant
+                    # Secret not found with this name, try next variant
+                    continue
                 except Exception as e:
-                    # If DescribeSecret fails, try ListSecrets as fallback
-                    if "ListSecrets" in str(e) or "AccessDenied" in str(e):
-                        # Don't have ListSecrets permission, try direct access
+                    # If DescribeSecret fails with access error, try GetSecretValue directly
+                    error_str = str(e)
+                    if "AccessDenied" in error_str or "not authorized" in error_str.lower():
+                        # Don't have DescribeSecret, try GetSecretValue (which we do have)
                         try:
-                            # Try to get the secret value directly (if name works)
-                            sm.get_secret_value(SecretId=secret_name_variant)
-                            # If that works, construct ARN from name
-                            # Format: arn:aws:secretsmanager:REGION:ACCOUNT:secret:NAME-XXXXXX
-                            # We can't get account ID easily, so try to use name as-is
-                            print(f"✅ Found secret by name: {secret_name_variant}")
-                            return secret_name_variant  # Return name, AWS accepts it
-                        except:
+                            # Try to get the secret value directly - if this works, use the name
+                            # AWS will accept the name even without full ARN
+                            test_resp = sm.get_secret_value(SecretId=secret_name_variant)
+                            # If we get here, the secret exists and we can access it
+                            # Try to get ARN from describe, or use name (AWS accepts both)
+                            try:
+                                desc_resp = sm.describe_secret(SecretId=secret_name_variant)
+                                arn = desc_resp.get("ARN")
+                                if arn:
+                                    print(f"✅ Auto-discovered secret: {secret_name_variant} -> {arn}")
+                                    return arn
+                            except:
+                                # Use name directly - AWS accepts it
+                                print(f"✅ Found secret by name (using name as identifier): {secret_name_variant}")
+                                return secret_name_variant
+                        except sm.exceptions.ResourceNotFoundException:
+                            continue  # Try next variant
+                        except Exception:
                             continue
                     else:
-                        continue
+                        continue  # Other error, try next variant
             except Exception:
-                continue
+                continue  # Try next variant
     
-    # Fallback: Try ListSecrets if available (may not have permission)
-    try:
-        paginator = sm.get_paginator("list_secrets")
-        for page in paginator.paginate():
-            for secret in page.get("SecretList", []):
-                secret_name = secret.get("Name", "").lower()
-                for pattern in name_patterns:
-                    if pattern.lower() in secret_name:
-                        arn = secret.get("ARN")
-                        if arn:
-                            print(f"✅ Auto-discovered secret via ListSecrets: {secret_name} -> {arn}")
-                            return arn
-    except Exception as e:
-        # ListSecrets not available - that's okay, we tried direct access above
-        pass
-    
+    # If we get here, none of the direct name attempts worked
+    # This means either:
+    # 1. Secrets don't exist with those names
+    # 2. Names are different than expected
+    print(f"⚠️ Could not auto-discover secret. Tried patterns: {name_patterns}")
+    print(f"⚠️ Make sure secrets exist in region {region} with names containing: {', '.join(name_patterns)}")
     return None
 
 
