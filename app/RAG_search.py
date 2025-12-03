@@ -240,7 +240,7 @@ def get_rag_response(
     """Return (response_text, sources, programs) for UI integration."""
     searcher = RAGSearcher()
     initial_matches = searcher.search_vectors(query, limit=50)
-    matches = searcher.rerank_matches(query, initial_matches, top_n=10)
+    matches = searcher.rerank_matches(query, initial_matches, top_n=15)
     context = searcher.format_context(matches)
 
     answer = (
