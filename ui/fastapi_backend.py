@@ -936,22 +936,55 @@ async def health_check():
 @app.get("/health/rag")
 async def rag_health_check():
     """
-    Check if RAG service is accessible
+    Check if RAG service is accessible with detailed diagnostics
     """
     try:
         async with httpx.AsyncClient(timeout=5.0) as client:
             response = await client.get(f"{RAG_SERVICE_URL}/health")
             response.raise_for_status()
             rag_status = response.json()
-            return {
+            
+            # Enhanced status with component checks
+            status = {
                 "status": "connected",
                 "rag_service_url": RAG_SERVICE_URL,
                 "rag_service_status": rag_status,
-                "timestamp": datetime.now().isoformat()
+                "timestamp": datetime.now().isoformat(),
+                "components": {
+                    "rag_service": "online",
+                    "secrets": rag_status.get("secrets", {}),
+                    "aws": rag_status.get("aws", {}),
+                    "components": rag_status.get("components", {})
+                }
             }
-    except Exception as e:
+            
+            # Check if secrets are available
+            secrets_status = rag_status.get("secrets", {})
+            if isinstance(secrets_status, dict):
+                if secrets_status.get("openai") != "available" or secrets_status.get("pinecone") != "available":
+                    status["warnings"] = ["Some secrets may not be available"]
+            
+            return status
+    except httpx.ConnectError as e:
         return {
             "status": "disconnected",
+            "rag_service_url": RAG_SERVICE_URL,
+            "error": f"Cannot connect to RAG service at {RAG_SERVICE_URL}",
+            "error_type": "ConnectionError",
+            "suggestion": "Check if RAG service (app container) is running: docker-compose ps app",
+            "timestamp": datetime.now().isoformat()
+        }
+    except httpx.TimeoutException as e:
+        return {
+            "status": "timeout",
+            "rag_service_url": RAG_SERVICE_URL,
+            "error": "RAG service did not respond in time",
+            "error_type": "Timeout",
+            "timestamp": datetime.now().isoformat()
+        }
+    except Exception as e:
+        return {
+            "status": "error",
             "rag_service_url": RAG_SERVICE_URL,
             "error": str(e),
             "error_type": type(e).__name__,
