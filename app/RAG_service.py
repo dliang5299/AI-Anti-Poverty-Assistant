@@ -120,15 +120,33 @@ class CalendarResponse(BaseModel):
     has_sufficient_context: bool = False
     message: Optional[str] = None
 
-# Instantiate components
-ingestor = RAGIngestor()
-searcher = RAGSearcher()
+# Lazy initialization - components will be created on first use
+# This prevents startup crashes if secrets aren't immediately available
+_ingestor = None
+_searcher = None
+
+def get_ingestor():
+    global _ingestor
+    if _ingestor is None:
+        _ingestor = RAGIngestor()
+    return _ingestor
+
+def get_searcher():
+    global _searcher
+    if _searcher is None:
+        _searcher = RAGSearcher()
+    return _searcher
+
+# For backward compatibility, create aliases
+ingestor = None  # Will be lazy-loaded
+searcher = None   # Will be lazy-loaded
 
 @app.post("/ingest")
 def ingest(request: IngestRequest):
     try:
-        ingestor.create_index()
-        stats = ingestor.ingest_from_s3(request.bucket, request.prefix or "")
+        ing = get_ingestor()
+        ing.create_index()
+        stats = ing.ingest_from_s3(request.bucket, request.prefix or "")
         return {"status": "success", "statistics": stats}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -138,9 +156,10 @@ def chat(request: ChatRequest):
     """Return a Bedrock-generated answer with Pinecone sources; fallback to RAG-only if Bedrock fails."""
     try:
         # 1) Retrieve top-k context from Pinecone via your searcher
-        initial_matches = searcher.search_vectors(request.message, limit=50)
-        matches = searcher.rerank_matches(request.message, initial_matches, top_n=15)
-        context = searcher.format_context(matches)
+        search = get_searcher()
+        initial_matches = search.search_vectors(request.message, limit=50)
+        matches = search.rerank_matches(request.message, initial_matches, top_n=15)
+        context = search.format_context(matches)
 
         # 2) Build the prompt
         today = datetime.now().strftime("%B %d, %Y")
@@ -276,11 +295,13 @@ def health():
         "timestamp": datetime.now().isoformat()
     }
     
-    # Check if components are initialized
+    # Check if components are initialized (lazy check)
     try:
+        ing_initialized = _ingestor is not None
+        search_initialized = _searcher is not None
         health_status["components"] = {
-            "ingestor": "initialized" if ingestor else "not initialized",
-            "searcher": "initialized" if searcher else "not initialized"
+            "ingestor": "initialized" if ing_initialized else "lazy (will initialize on first use)",
+            "searcher": "initialized" if search_initialized else "lazy (will initialize on first use)"
         }
     except Exception as e:
         health_status["components"] = {"error": str(e)}
