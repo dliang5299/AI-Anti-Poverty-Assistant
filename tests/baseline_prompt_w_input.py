@@ -82,6 +82,7 @@ for MODEL_ID in MODELS:
             model_answer=model_answer,
             gold_context=gold_context,
             gold_response=gold_response,
+            retrieved_context=None,
         )
 
         row = {

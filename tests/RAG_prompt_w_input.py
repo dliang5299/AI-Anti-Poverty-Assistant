@@ -152,7 +152,8 @@ def main() -> None:
         if data and not err:
             # API returns: {response: str, sources: List[Dict], programs: List[str]}
             answer = data.get("response") or ""
-            sources = data.get("sources") or []
+            retrieved_texts = data.get("sources") or []
+            sources = retrieved_texts
             programs = data.get("programs") or []
             # Try to capture the retrieved context if the API returns it or if sources include text
             retrieved_context = ""
@@ -210,6 +211,7 @@ def main() -> None:
                 model_answer=answer,
                 gold_context=gold_context,
                 gold_response=gold_response,
+                retrieved_context=retrieved_context,
             )
 
             row: Dict[str, Any] = {
