@@ -268,4 +268,54 @@ def generate_calendar_endpoint(request: CalendarRequest):
 
 @app.get("/health")
 def health():
-    return {"service": "ok", "regions": regions, "model": models["llm_model"]}
+    """Comprehensive health check for RAG service"""
+    health_status = {
+        "service": "ok",
+        "regions": regions,
+        "model": models["llm_model"],
+        "timestamp": datetime.now().isoformat()
+    }
+    
+    # Check if components are initialized
+    try:
+        health_status["components"] = {
+            "ingestor": "initialized" if ingestor else "not initialized",
+            "searcher": "initialized" if searcher else "not initialized"
+        }
+    except Exception as e:
+        health_status["components"] = {"error": str(e)}
+    
+    # Check AWS connectivity
+    try:
+        # Test Bedrock client
+        bedrock = get_bedrock()
+        health_status["aws"] = {
+            "bedrock": "connected",
+            "bedrock_region": regions["bedrock"]
+        }
+    except Exception as e:
+        health_status["aws"] = {
+            "bedrock": "error",
+            "error": str(e)
+        }
+    
+    # Check secrets status (without exposing values)
+    try:
+        # Check if secret ARNs are configured or can be auto-discovered
+        import os
+        openai_arn = os.getenv("OPENAI_API_KEY_SECRET_ARN")
+        pinecone_arn = os.getenv("PINECONE_API_KEY_SECRET_ARN")
+        
+        health_status["secrets"] = {
+            "openai_arn_configured": bool(openai_arn),
+            "pinecone_arn_configured": bool(pinecone_arn),
+            "auto_discovery": "enabled" if not (openai_arn and pinecone_arn) else "disabled",
+            "note": "Secrets will be auto-discovered if ARNs not set"
+        }
+    except Exception as e:
+        health_status["secrets"] = {
+            "status": "error",
+            "error": str(e)
+        }
+    
+    return health_status
