@@ -197,12 +197,26 @@ def get_openai_api_key() -> str:
     if direct_key:
         return direct_key
 
+    hint_region = _get_env("OPENAI_SECRET_REGION") or get_regions()["bedrock"]
+    
+    # Try combined secret first (benefitsflow-rag/secrets contains both keys)
+    combined_secret_names = ["benefitsflow-rag/secrets", "benefitsflow/rag/secrets", "benefitsflow/secrets"]
+    for secret_name in combined_secret_names:
+        try:
+            print(f"🔍 Trying combined secret: {secret_name}")
+            key = _fetch_secret(secret_name, hint_region=hint_region, prefer_key="OPENAI_API_KEY")
+            if key:
+                print(f"✅ Found OpenAI API key in combined secret: {secret_name}")
+                return key
+        except Exception as e:
+            print(f"⚠️ Could not retrieve from {secret_name}: {type(e).__name__}")
+            continue
+
     # Otherwise use the dedicated secret
     secret_id = _get_env("OPENAI_API_KEY_SECRET_ARN")
     
     # Auto-discover secret if ARN not provided (works with IAM permissions)
     if not secret_id:
-        hint_region = _get_env("OPENAI_SECRET_REGION") or get_regions()["bedrock"]
         print("🔍 Auto-discovering OpenAI API key secret...")
         secret_id = _discover_secret_arn_by_name(
             ["openai", "openai-api-key", "benefitsflow/openai"],
@@ -212,14 +226,14 @@ def get_openai_api_key() -> str:
     if not secret_id:
         raise RuntimeError(
             "OPENAI_API_KEY_SECRET_ARN is required, or a secret containing 'openai' "
-            "must exist in AWS Secrets Manager."
+            "must exist in AWS Secrets Manager. Tried combined secrets: " + ", ".join(combined_secret_names) +
+            " and patterns: openai, openai-api-key, benefitsflow/openai"
         )
 
-    hint = _get_env("OPENAI_SECRET_REGION") or get_regions()["bedrock"]
-    key = _fetch_secret(secret_id, hint_region=hint, prefer_key="OPENAI_API_KEY")
+    key = _fetch_secret(secret_id, hint_region=hint_region, prefer_key="OPENAI_API_KEY")
 
     if not key:
-        raise RuntimeError("Could not retrieve OPENAI API key from secret.")
+        raise RuntimeError(f"Could not retrieve OPENAI API key from secret: {secret_id}")
     return key
 
 
@@ -230,12 +244,26 @@ def get_pinecone_api_key() -> str:
     if direct_key:
         return direct_key
 
+    hint_region = _get_env("PINECONE_SECRET_REGION") or get_regions()["pinecone"]
+    
+    # Try combined secret first (benefitsflow-rag/secrets contains both keys)
+    combined_secret_names = ["benefitsflow-rag/secrets", "benefitsflow/rag/secrets", "benefitsflow/secrets"]
+    for secret_name in combined_secret_names:
+        try:
+            print(f"🔍 Trying combined secret: {secret_name}")
+            key = _fetch_secret(secret_name, hint_region=hint_region, prefer_key="PINECONE_API_KEY")
+            if key:
+                print(f"✅ Found Pinecone API key in combined secret: {secret_name}")
+                return key
+        except Exception as e:
+            print(f"⚠️ Could not retrieve from {secret_name}: {type(e).__name__}")
+            continue
+
     # Otherwise use the dedicated secret
     secret_id = _get_env("PINECONE_API_KEY_SECRET_ARN")
     
     # Auto-discover secret if ARN not provided (works with IAM permissions)
     if not secret_id:
-        hint_region = _get_env("PINECONE_SECRET_REGION") or get_regions()["pinecone"]
         print("🔍 Auto-discovering Pinecone API key secret...")
         secret_id = _discover_secret_arn_by_name(
             ["pinecone", "pinecone-api-key", "benefitsflow/pinecone"],
@@ -245,14 +273,13 @@ def get_pinecone_api_key() -> str:
     if not secret_id:
         raise RuntimeError(
             "PINECONE_API_KEY_SECRET_ARN is required, or a secret containing 'pinecone' "
-            "must exist in AWS Secrets Manager."
+            "must exist in AWS Secrets Manager. Tried combined secrets: " + ", ".join(combined_secret_names)
         )
 
-    hint = _get_env("PINECONE_SECRET_REGION") or get_regions()["pinecone"]
-    key = _fetch_secret(secret_id, hint_region=hint, prefer_key="PINECONE_API_KEY")
+    key = _fetch_secret(secret_id, hint_region=hint_region, prefer_key="PINECONE_API_KEY")
 
     if not key:
-        raise RuntimeError("Could not retrieve PINECONE API key from secret.")
+        raise RuntimeError(f"Could not retrieve PINECONE API key from secret: {secret_id}")
     return key
 
 
