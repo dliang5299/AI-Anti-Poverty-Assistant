@@ -89,7 +89,7 @@ PINECONE_ENV=aws-us-east-1
 BEDROCK_REGION=us-east-1
 
 # Pinecone Configuration
-PINECONE_INDEX_NAME=benefitsflow  # or "knowledge" if that's your index name
+PINECONE_INDEX_NAME=benefitsflow4  # Pinecone index name
 PINECONE_DIM=1536
 
 # Model Configuration
