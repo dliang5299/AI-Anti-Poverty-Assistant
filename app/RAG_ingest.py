@@ -158,7 +158,7 @@ class RAGIngestor:
         self.index.upsert(vectors=[(id, vector, metadata)])
 
     def _ingest_docs_jsonl(self, key: str, body: str, stats: Dict[str, Any]):
-        """Ingest a .docs.jsonl file produced by scrape_allbenefits.py."""
+        """Ingest a .jsonl file produced by scrape_allbenefits.py."""
         total_chunks = 0
         for line in body.splitlines():
             line = line.strip()
@@ -227,13 +227,8 @@ class RAGIngestor:
                     body_obj = self.s3.get_object(Bucket=bucket, Key=key)
                     body = body_obj["Body"].read().decode("utf-8", errors="ignore")
 
-                    if key.endswith(".docs.jsonl"):
+                    if key.endswith(".jsonl"):
                         self._ingest_docs_jsonl(key, body, stats)
-                        continue
-
-                    if key.endswith(".chunks.jsonl"):
-                        # Old pre-chunked files are ignored now
-                        print(f"[INGEST] Skipping legacy chunks file {key}")
                         continue
 
                     # Fallback: treat whole object as one markdown blob

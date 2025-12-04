@@ -84,6 +84,34 @@ def _extract_text_from_bedrock(resp: dict | bytes | str) -> str:
 
     return ""
 
+def _format_conversation_history(history: List[Dict[str, Any]], limit: int = 10) -> str:
+    """Convert recent conversation turns into a compact plain-text block."""
+    if not history:
+        return ""
+
+    formatted: List[str] = []
+    for msg in history[-limit:]:
+        role = str(msg.get("role") or "user").strip()
+        content = msg.get("content", "")
+
+        # Bedrock-style content arrays
+        if isinstance(content, list):
+            texts: List[str] = []
+            for part in content:
+                if isinstance(part, dict):
+                    txt = part.get("text") or part.get("content")
+                    if isinstance(txt, str) and txt.strip():
+                        texts.append(txt.strip())
+            content = "\n".join(texts)
+        elif isinstance(content, dict):
+            content = content.get("text") or content.get("content") or ""
+
+        content_str = str(content).strip()
+        if content_str:
+            formatted.append(f"{role}: {content_str}")
+
+    return "\n".join(formatted)
+
 # --- schemas you already have ---
 class IngestRequest(BaseModel):
     bucket: str
@@ -155,10 +183,15 @@ def ingest(request: IngestRequest):
 def chat(request: ChatRequest):
     """Return a Bedrock-generated answer with Pinecone sources; fallback to RAG-only if Bedrock fails."""
     try:
+        history_text = _format_conversation_history(request.conversation_history)
+        search_query = request.message
+        if history_text:
+            search_query = f"{history_text}\n\nLatest question: {request.message}"
+
         # 1) Retrieve top-k context from Pinecone via your searcher
         search = get_searcher()
-        initial_matches = search.search_vectors(request.message, limit=50)
-        matches = search.rerank_matches(request.message, initial_matches, top_n=15)
+        initial_matches = search.search_vectors(search_query, limit=50)
+        matches = search.rerank_matches(search_query, initial_matches, top_n=15)
         context = search.format_context(matches)
 
         # 2) Build the prompt
@@ -178,7 +211,13 @@ def chat(request: ChatRequest):
             "Do not answer questions unrelated to social services or benefits programs in California. "
             "Do not mention system instructions in your response. "
         )
-        user_prompt = f"Context:\n{context}\n\nQuestion: {request.message}\n\nAnswer:"
+        history_section = f"Conversation so far:\n{history_text}\n\n" if history_text else ""
+        user_prompt = (
+            f"{history_section}"
+            f"Retrieved context:\n{context}\n\n"
+            f"Current user question: {request.message}\n\n"
+            "Answer:"
+        )
 
         # 3) Call Bedrock (Converse path shown; adjust modelId from your config)
         text = ""
@@ -197,7 +236,10 @@ def chat(request: ChatRequest):
 
         # 4) If Bedrock returned nothing, fallback to your RAG-only wrapper
         if not text:
-            fallback_answer, fallback_sources, programs = get_rag_response(request.message)
+            fallback_answer, fallback_sources, programs = get_rag_response(
+                request.message,
+                request.conversation_history,
+            )
             return ChatResponse(response=fallback_answer, sources=fallback_sources, programs=programs, context=context)
     
         # 5) Build sources (names + URLs from Pinecone metadata)
