@@ -2163,6 +2163,12 @@
                 addAllBtn.textContent = `➕ Add All ${currentCalendarEvents.length} Events to Google Calendar`;
                 addAllBtn.onclick = addAllToGoogleCalendar;
                 addAllContainer.appendChild(addAllBtn);
+                
+                // Add a note about popup blockers
+                const note = document.createElement('p');
+                note.style.cssText = 'margin-top: 0.5rem; font-size: 0.85rem; color: var(--text-muted); text-align: center;';
+                note.textContent = '💡 If some tabs don\'t open, your browser may be blocking popups. Allow popups for this site or use individual buttons below.';
+                addAllContainer.appendChild(note);
             }
             
             events.forEach((event, index) => {
@@ -2213,22 +2219,36 @@
             }
             
             const total = currentCalendarEvents.length;
+            let opened = 0;
             
-            // Open all events - user-initiated clicks should bypass popup blockers
-            // Open first event immediately, then others with small delays
-            window.open(currentCalendarEvents[0].url, '_blank', 'noopener,noreferrer');
-            
-            // Open remaining events with small delays to avoid browser blocking
-            for (let i = 1; i < total; i++) {
+            // Use a recursive approach with longer delays to avoid popup blockers
+            // Browsers block multiple popups unless they're spaced out enough
+            function openNext(index) {
+                if (index >= total) {
+                    // All events opened
+                    setTimeout(() => {
+                        alert(`✅ Opened ${opened} of ${total} Google Calendar event(s) in new tabs.\n\n${opened < total ? 'Note: Some tabs may have been blocked by your browser. Please use the individual "Add to Google Calendar" buttons for any missing events.' : 'Please save each event to your calendar.'}`);
+                    }, 500);
+                    return;
+                }
+                
+                // Open the event
+                const newWindow = window.open(currentCalendarEvents[index].url, '_blank', 'noopener,noreferrer');
+                
+                // Check if window was blocked
+                if (newWindow) {
+                    opened++;
+                }
+                
+                // Wait longer between opens (800ms) to reduce blocking
+                // Browsers need enough time between popups to not consider them spam
                 setTimeout(() => {
-                    window.open(currentCalendarEvents[i].url, '_blank', 'noopener,noreferrer');
-                }, i * 100); // 100ms delay between each
+                    openNext(index + 1);
+                }, 800);
             }
             
-            // Show confirmation message
-            setTimeout(() => {
-                alert(`✅ Opening ${total} Google Calendar event(s) in new tabs.\n\nPlease save each event to your calendar.`);
-            }, total * 100 + 200);
+            // Start opening events
+            openNext(0);
         }
 
         // Show feedback modal
