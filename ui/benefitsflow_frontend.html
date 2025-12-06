@@ -953,6 +953,12 @@
                 • Session-based, no personal information stored<br>
                 • Data last updated: October 2025
             </div>
+
+            <div style="margin-top: 1rem; padding: 1rem; text-align: center;">
+                <button class="sidebar-btn" onclick="showAboutUs()" style="width: 100%; background: var(--primary-color); color: white;">
+                    ℹ️ About Us
+                </button>
+            </div>
         </aside>
 
         <!-- Chat Container -->
@@ -1106,6 +1112,79 @@
                 </button>
                 <button class="modal-btn primary" onclick="submitFeedback()">
                     Submit Feedback
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- About Us Modal -->
+    <div class="modal" id="aboutUsModal">
+        <div class="modal-content" style="max-width: 800px;">
+            <div class="modal-header">
+                <h2>About BenefitsFlow</h2>
+                <button class="close-btn" onclick="closeModal('aboutUsModal')">×</button>
+            </div>
+            <div class="modal-body">
+                <div style="margin-bottom: 2rem;">
+                    <p style="font-size: 1.1rem; line-height: 1.6; color: var(--text-color); margin-bottom: 1rem;">
+                        BenefitsFlow is a UC Berkeley Master of Information and Data Science (MIDS) capstone project developed in Fall 2025. Our team built a data-driven solution to simplify California's complex public benefits landscape, making it easier for people experiencing job loss to find the help they need.
+                    </p>
+                </div>
+
+                <div style="margin-bottom: 2rem;">
+                    <h3 style="color: var(--primary-color); margin-bottom: 1rem; font-size: 1.3rem;">Our Mission</h3>
+                    <p style="line-height: 1.6; color: var(--text-color);">
+                        Through an AI-powered conversational chatbot, we connect Californians with accurate, personalized benefits information. Our platform provides step-by-step guidance, downloadable application checklists, and calendar integration for renewal deadlines—helping users navigate programs like unemployment insurance, CalFresh, Medi-Cal, and housing assistance.
+                    </p>
+                </div>
+
+                <div>
+                    <h3 style="color: var(--primary-color); margin-bottom: 1.5rem; font-size: 1.3rem;">The Team</h3>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 2rem; margin-top: 1.5rem;">
+                        <div style="text-align: center;">
+                            <img src="images/team/Godsee.png" alt="Godsee Joy" style="width: 150px; height: 150px; border-radius: 50%; object-fit: cover; margin-bottom: 1rem; border: 3px solid var(--primary-color);">
+                            <h4 style="margin: 0.5rem 0; font-size: 1.1rem;">
+                                <a href="https://www.linkedin.com/in/godsee-joy/" target="_blank" rel="noopener noreferrer" style="color: var(--primary-color); text-decoration: none; font-weight: 600;">
+                                    Godsee Joy
+                                </a>
+                            </h4>
+                            <p style="color: var(--text-muted); font-size: 0.9rem; margin: 0.5rem 0; font-weight: 600;">Project Manager & Subject Matter Expert</p>
+                            <p style="color: var(--text-color); font-size: 0.85rem; line-height: 1.4; margin-top: 0.5rem;">
+                                Product strategy, exploratory data analysis, and model evaluation
+                            </p>
+                        </div>
+
+                        <div style="text-align: center;">
+                            <img src="images/team/Deric.png" alt="Deric Liang" style="width: 150px; height: 150px; border-radius: 50%; object-fit: cover; margin-bottom: 1rem; border: 3px solid var(--primary-color);">
+                            <h4 style="margin: 0.5rem 0; font-size: 1.1rem;">
+                                <a href="https://www.linkedin.com/in/liangderic5299/" target="_blank" rel="noopener noreferrer" style="color: var(--primary-color); text-decoration: none; font-weight: 600;">
+                                    Deric Liang
+                                </a>
+                            </h4>
+                            <p style="color: var(--text-muted); font-size: 0.9rem; margin: 0.5rem 0; font-weight: 600;">Machine Learning Engineer</p>
+                            <p style="color: var(--text-color); font-size: 0.85rem; line-height: 1.4; margin-top: 0.5rem;">
+                                NLP pipeline development, RAG implementation, and AWS support
+                            </p>
+                        </div>
+
+                        <div style="text-align: center;">
+                            <img src="images/team/Maya.png" alt="Maya Alhashem" style="width: 150px; height: 150px; border-radius: 50%; object-fit: cover; margin-bottom: 1rem; border: 3px solid var(--primary-color);">
+                            <h4 style="margin: 0.5rem 0; font-size: 1.1rem;">
+                                <a href="https://www.linkedin.com/in/mayada-alhashem/" target="_blank" rel="noopener noreferrer" style="color: var(--primary-color); text-decoration: none; font-weight: 600;">
+                                    Maya Alhashem
+                                </a>
+                            </h4>
+                            <p style="color: var(--text-muted); font-size: 0.9rem; margin: 0.5rem 0; font-weight: 600;">Infrastructure & Deployment Lead</p>
+                            <p style="color: var(--text-color); font-size: 0.85rem; line-height: 1.4; margin-top: 0.5rem;">
+                                AWS architecture, deployment, and UI/UX design
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="modal-btn primary" onclick="closeModal('aboutUsModal')" style="width: 100%;">
+                    Close
                 </button>
             </div>
         </div>
@@ -2070,6 +2149,11 @@ END:VCALENDAR`;
         function submitFeedback() {
             alert('✅ Thank you for your feedback!\n\n(This is a demo - feedback would be saved in production)');
             closeModal('feedbackModal');
+        }
+
+        // Show About Us modal
+        function showAboutUs() {
+            document.getElementById('aboutUsModal').classList.add('active');
         }
 
         // Close modal
