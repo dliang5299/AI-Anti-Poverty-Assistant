@@ -230,6 +230,44 @@ class RAGSearcher:
             parts.append("\n".join(lines).strip())
         return "\n\n".join(parts)
 
+def _format_history(history: list | None, limit: int = 10) -> str:
+    """Flatten recent conversation turns into plain text for search/prompting."""
+    if not history or not isinstance(history, list):
+        return ""
+
+    out: List[str] = []
+    for msg in history[-limit:]:
+        if not isinstance(msg, dict):
+            continue
+        role = str(msg.get("role") or "user").strip()
+        content = msg.get("content", "")
+        if isinstance(content, list):
+            texts = []
+            for part in content:
+                if isinstance(part, dict):
+                    txt = part.get("text") or part.get("content")
+                    if isinstance(txt, str) and txt.strip():
+                        texts.append(txt.strip())
+            content = "\n".join(texts)
+        elif isinstance(content, dict):
+            content = content.get("text") or content.get("content") or ""
+
+        content_str = str(content).strip()
+        if content_str:
+            out.append(f"{role}: {content_str}")
+
+    return "\n".join(out)
+
+def _build_query_with_history(query: str, conversation_history: list | None) -> tuple[str, str]:
+    """
+    Combine the user's latest question with recent history so retrieval can
+    leverage ongoing context. Returns (search_query, history_text).
+    """
+    history_text = _format_history(conversation_history)
+    if history_text:
+        return f"{history_text}\n\nLatest question: {query}", history_text
+    return query, ""
+
 
 # === UI Integration Wrapper ===
 def get_rag_response(
@@ -239,9 +277,12 @@ def get_rag_response(
 ):
     """Return (response_text, sources, programs) for UI integration."""
     searcher = RAGSearcher()
-    initial_matches = searcher.search_vectors(query, limit=50)
-    matches = searcher.rerank_matches(query, initial_matches, top_n=15)
+    search_query, history_text = _build_query_with_history(query, conversation_history)
+    initial_matches = searcher.search_vectors(search_query, limit=50)
+    matches = searcher.rerank_matches(search_query, initial_matches, top_n=15)
     context = searcher.format_context(matches)
+    if history_text:
+        context = f"Conversation history:\n{history_text}\n\nRetrieved context:\n{context}"
 
     answer = (
         f"Based on {len(matches)} retrieved chunks, here are findings:\n\n"
