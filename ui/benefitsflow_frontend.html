@@ -1134,8 +1134,11 @@
                     </div>
                 </div>
             </div>
-            <div class="modal-footer">
-                <button class="modal-btn primary" onclick="closeModal('calendarModal')" style="width: 100%;">
+            <div class="modal-footer" style="display: flex; gap: 1rem;">
+                <button class="modal-btn secondary" id="addAllCalendarBtn" onclick="addAllToGoogleCalendar()" style="flex: 1;">
+                    ➕ Add All to Google Calendar
+                </button>
+                <button class="modal-btn primary" onclick="closeModal('calendarModal')" style="flex: 1;">
                     Close
                 </button>
             </div>
@@ -2133,10 +2136,24 @@
             }
         }
 
+        // Store current calendar events for "Add All" functionality
+        let currentCalendarEvents = [];
+
         // Show calendar modal with Google Calendar links
         function showCalendarModal(events) {
             const eventsList = document.getElementById('calendarEventsList');
             eventsList.innerHTML = '';
+            
+            // Store events globally for "Add All" functionality
+            currentCalendarEvents = events || [];
+            
+            // Show/hide "Add All" button based on number of events
+            const addAllBtn = document.getElementById('addAllCalendarBtn');
+            if (currentCalendarEvents.length > 1) {
+                addAllBtn.style.display = 'block';
+            } else {
+                addAllBtn.style.display = 'none';
+            }
             
             if (!events || events.length === 0) {
                 eventsList.innerHTML = '<p style="text-align: center; color: var(--text-muted); padding: 2rem;">No calendar events available.</p>';
@@ -2182,6 +2199,33 @@
             });
             
             document.getElementById('calendarModal').classList.add('active');
+        }
+
+        // Add all events to Google Calendar
+        function addAllToGoogleCalendar() {
+            if (!currentCalendarEvents || currentCalendarEvents.length === 0) {
+                alert('No events to add.');
+                return;
+            }
+            
+            // Open each Google Calendar URL with a small delay to avoid popup blockers
+            // Note: Browsers may block multiple popups, but user-initiated actions (like clicking a button) should work
+            let opened = 0;
+            const delay = 300; // 300ms delay between each tab
+            
+            currentCalendarEvents.forEach((event, index) => {
+                setTimeout(() => {
+                    window.open(event.url, '_blank', 'noopener,noreferrer');
+                    opened++;
+                    
+                    // Show completion message after all tabs are opened
+                    if (opened === currentCalendarEvents.length) {
+                        setTimeout(() => {
+                            alert(`✅ Opened ${opened} Google Calendar event(s) in new tabs.\n\nPlease save each event to your calendar.`);
+                        }, 500);
+                    }
+                }, index * delay);
+            });
         }
 
         // Show feedback modal
