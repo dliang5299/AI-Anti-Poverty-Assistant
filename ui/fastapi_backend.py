@@ -802,10 +802,46 @@ async def download_checklist(request: DownloadRequest):
         print(f"Checklist download error: {error_detail}")
         raise HTTPException(status_code=500, detail=f"Error generating checklist: {str(e)}")
 
+def _create_google_calendar_url(event: dict, event_date: datetime) -> str:
+    """
+    Create a Google Calendar URL for a single event.
+    Format: https://calendar.google.com/calendar/render?action=TEMPLATE&text=...&dates=...&details=...
+    """
+    from urllib.parse import quote
+    
+    # Format dates: YYYYMMDDTHHMMSSZ/YYYYMMDDTHHMMSSZ (UTC)
+    # Convert to UTC (Pacific is UTC-8 or UTC-7 depending on DST)
+    # For simplicity, we'll use local time and let Google Calendar handle timezone
+    start_time = event_date.replace(hour=9, minute=0, second=0)
+    end_time = start_time + timedelta(hours=1)
+    
+    # Format as YYYYMMDDTHHMMSS (no Z, Google Calendar will use the timezone)
+    start_str = start_time.strftime('%Y%m%dT%H%M%S')
+    end_str = end_time.strftime('%Y%m%dT%H%M%S')
+    
+    # Build URL
+    base_url = "https://calendar.google.com/calendar/render"
+    params = {
+        "action": "TEMPLATE",
+        "text": event.get('summary', 'Important Date'),
+        "dates": f"{start_str}/{end_str}",
+        "details": event.get('description', ''),
+        "location": "Online Application",
+        "ctz": "America/Los_Angeles"
+    }
+    
+    # Add URL if available
+    if event.get('url'):
+        params['sprop'] = f"website:{event.get('url')}"
+    
+    # Build query string
+    query_string = "&".join([f"{k}={quote(str(v))}" for k, v in params.items()])
+    return f"{base_url}?{query_string}"
+
 @app.post("/download/calendar")
 async def download_calendar(request: DownloadRequest):
     """
-    Generate and download a calendar file (.ics) using RAG service
+    Generate Google Calendar links for events using RAG service
     """
     try:
         # Extract programs from conversation
@@ -842,70 +878,47 @@ async def download_calendar(request: DownloadRequest):
             print(f"Error generating calendar events: {e}")
             events_data = []
         
-        # Convert events to iCalendar format
-        events = []
-        event_num = 1
+        # Convert events to Google Calendar URLs
+        calendar_links = []
         
         if not events_data:
             # Not enough context - create a single informational event
             base_date = datetime.now() + timedelta(days=1)
-            events.append(f"""BEGIN:VEVENT
-UID:benefitsflow-context-needed@benefitsflow.com
-DTSTAMP:{datetime.now().strftime('%Y%m%dT%H%M%SZ')}
-DTSTART;TZID=America/Los_Angeles:{base_date.strftime('%Y%m%d')}T090000
-DTEND;TZID=America/Los_Angeles:{base_date.strftime('%Y%m%d')}T100000
-SUMMARY:Continue Conversation for Personalized Calendar
-DESCRIPTION:Not enough context from our conversation to generate personalized calendar events. Please continue chatting with the assistant about your specific situation, programs you're interested in, and any deadlines or important dates. Then try downloading your calendar again.
-LOCATION:BenefitsFlow Chat
-STATUS:CONFIRMED
-END:VEVENT""")
+            info_event = {
+                'summary': 'Continue Conversation for Personalized Calendar',
+                'description': 'Not enough context from our conversation to generate personalized calendar events. Please continue chatting with the assistant about your specific situation, programs you\'re interested in, and any deadlines or important dates. Then try downloading your calendar again.',
+                'start_date': base_date.strftime('%Y-%m-%d'),
+                'url': ''
+            }
+            event_date = datetime.strptime(info_event['start_date'], "%Y-%m-%d")
+            calendar_links.append({
+                'title': info_event['summary'],
+                'url': _create_google_calendar_url(info_event, event_date),
+                'date': info_event['start_date']
+            })
         else:
             # Use RAG-generated events
             for event in events_data:
                 try:
                     event_date = datetime.strptime(event['start_date'], "%Y-%m-%d")
-                    # Set time to 9am in Pacific Time (America/Los_Angeles)
-                    # Use local time format (no Z suffix) with TZID
-                    events.append(f"""BEGIN:VEVENT
-UID:benefitsflow-{event_num}@benefitsflow.com
-DTSTAMP:{datetime.now().strftime('%Y%m%dT%H%M%SZ')}
-DTSTART;TZID=America/Los_Angeles:{event_date.strftime('%Y%m%d')}T090000
-DTEND;TZID=America/Los_Angeles:{event_date.strftime('%Y%m%d')}T100000
-SUMMARY:{event.get('summary', 'Important Date')}
-DESCRIPTION:{event.get('description', '')}
-LOCATION:Online Application
-URL:{event.get('url', '')}
-END:VEVENT""")
-                    event_num += 1
+                    calendar_links.append({
+                        'title': event.get('summary', 'Important Date'),
+                        'url': _create_google_calendar_url(event, event_date),
+                        'date': event['start_date'],
+                        'description': event.get('description', '')
+                    })
                 except Exception as e:
-                    print(f"Error formatting calendar event: {e}")
+                    print(f"Error creating Google Calendar URL for event: {e}")
                     continue
-        
-        ics_content = f"""BEGIN:VCALENDAR
-VERSION:2.0
-PRODID:-//BenefitsFlow//Benefits Calendar//EN
-CALSCALE:GREGORIAN
-METHOD:PUBLISH
-X-WR-CALNAME:California Benefits Important Dates
-X-WR-CALDESC:Important dates for California benefits programs based on your conversation
-X-WR-TIMEZONE:America/Los_Angeles
-{chr(10).join(events)}
-END:VCALENDAR"""
-        
-        # Create file in memory
-        file_content = ics_content.encode('utf-8')
         
         # Log download metrics
         log_download('calendar', list(all_programs) if all_programs else None)
         
-        return Response(
-            content=file_content,
-            media_type='text/calendar',
-            headers={
-                "Content-Disposition": "attachment; filename=benefits-calendar.ics",
-                "Content-Length": str(len(file_content))
-            }
-        )
+        return {
+            "success": True,
+            "events": calendar_links,
+            "message": f"Generated {len(calendar_links)} calendar event(s). Click any link to add to Google Calendar."
+        }
         
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error generating calendar: {str(e)}")

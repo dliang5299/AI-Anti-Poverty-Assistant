@@ -1052,7 +1052,7 @@
         <button class="action-btn checklist" id="checklistBtn" onclick="showChecklistPreview()" title="View Checklist">
             📋
         </button>
-        <button class="action-btn calendar" id="calendarBtn" onclick="downloadCalendar()" title="Download Calendar">
+        <button class="action-btn calendar" id="calendarBtn" onclick="downloadCalendar()" title="Add to Google Calendar">
             📅
         </button>
         <button class="action-btn restart" onclick="restartChat()" title="Start Over">
@@ -1112,6 +1112,31 @@
                 </button>
                 <button class="modal-btn primary" onclick="submitFeedback()">
                     Submit Feedback
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Calendar Modal -->
+    <div class="modal" id="calendarModal">
+        <div class="modal-content" style="max-width: 700px;">
+            <div class="modal-header">
+                <h2>📅 Add to Google Calendar</h2>
+                <button class="close-btn" onclick="closeModal('calendarModal')">×</button>
+            </div>
+            <div class="modal-body" style="max-height: 70vh; overflow-y: auto;">
+                <div id="calendarContent">
+                    <p style="margin-bottom: 1.5rem; color: var(--text-color);">
+                        Click any event below to add it to your Google Calendar. Each link will open Google Calendar with the event pre-filled.
+                    </p>
+                    <div id="calendarEventsList">
+                        <!-- Calendar events will be loaded here -->
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="modal-btn primary" onclick="closeModal('calendarModal')" style="width: 100%;">
+                    Close
                 </button>
             </div>
         </div>
@@ -2055,7 +2080,7 @@
             }
         }
 
-        // Download calendar
+        // Open Google Calendar links
         async function downloadCalendar() {
             showLoading('Preparing your calendar...', 'Analyzing your conversation');
             
@@ -2089,55 +2114,74 @@
                 updateLoading('Generating with AI...', 'Creating your personalized calendar');
 
                 if (response.ok) {
-                    const blob = await response.blob();
-                    const url = window.URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = 'benefits-calendar.ics';
-                    document.body.appendChild(a);
-                    a.click();
-                    document.body.removeChild(a);
-                    window.URL.revokeObjectURL(url);
+                    const data = await response.json();
                     hideLoading();
-                    alert('📅 Calendar downloaded successfully!');
+                    
+                    if (data.success && data.events && data.events.length > 0) {
+                        // Display events in modal
+                        showCalendarModal(data.events);
+                    } else {
+                        alert('No calendar events were generated. Please continue the conversation to get personalized reminders.');
+                    }
                 } else {
-                    throw new Error('Download failed');
+                    throw new Error('Failed to generate calendar events');
                 }
             } catch (error) {
                 hideLoading();
-                // Fallback calendar (when API unavailable)
-                const icsContent = `BEGIN:VCALENDAR
-VERSION:2.0
-PRODID:-//BenefitsFlow//California Benefits Calendar//EN
-CALSCALE:GREGORIAN
-METHOD:PUBLISH
-X-WR-CALNAME:California Benefits Important Dates 2025
-X-WR-CALDESC:Important dates for California benefits programs
-X-WR-TIMEZONE:America/Los_Angeles
-
-BEGIN:VEVENT
-UID:new-year-2025@benefitsflow.com
-DTSTART:20250101T000000Z
-DTEND:20250101T235959Z
-SUMMARY:New Year - Benefits offices closed
-DESCRIPTION:Benefits offices are closed for New Year's Day
-LOCATION:California Benefits Offices
-STATUS:CONFIRMED
-END:VEVENT
-END:VCALENDAR`;
-
-                const blob = new Blob([icsContent], { type: 'text/calendar' });
-                const url = window.URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = 'california-benefits-calendar-2025.ics';
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-                window.URL.revokeObjectURL(url);
-                hideLoading();
-                alert('📅 Calendar downloaded successfully!');
+                console.error('Calendar error:', error);
+                alert('❌ Error generating calendar events. Please try again later.');
             }
+        }
+
+        // Show calendar modal with Google Calendar links
+        function showCalendarModal(events) {
+            const eventsList = document.getElementById('calendarEventsList');
+            eventsList.innerHTML = '';
+            
+            if (!events || events.length === 0) {
+                eventsList.innerHTML = '<p style="text-align: center; color: var(--text-muted); padding: 2rem;">No calendar events available.</p>';
+                document.getElementById('calendarModal').classList.add('active');
+                return;
+            }
+            
+            events.forEach((event, index) => {
+                const eventDiv = document.createElement('div');
+                eventDiv.style.cssText = 'margin-bottom: 1.5rem; padding: 1.25rem; background: var(--bg-color); border-radius: 12px; border: 1px solid var(--light-gray);';
+                
+                const title = document.createElement('h4');
+                title.style.cssText = 'margin: 0 0 0.5rem 0; font-size: 1.1rem; color: var(--primary-color);';
+                title.textContent = event.title || `Event ${index + 1}`;
+                eventDiv.appendChild(title);
+                
+                if (event.date) {
+                    const dateDiv = document.createElement('div');
+                    dateDiv.style.cssText = 'margin-bottom: 0.75rem; font-size: 0.9rem; color: var(--text-muted);';
+                    const eventDate = new Date(event.date + 'T09:00:00');
+                    dateDiv.textContent = `📅 ${eventDate.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}`;
+                    eventDiv.appendChild(dateDiv);
+                }
+                
+                if (event.description) {
+                    const descDiv = document.createElement('div');
+                    descDiv.style.cssText = 'margin-bottom: 1rem; font-size: 0.9rem; color: var(--text-color); line-height: 1.5;';
+                    descDiv.textContent = event.description;
+                    eventDiv.appendChild(descDiv);
+                }
+                
+                const linkBtn = document.createElement('a');
+                linkBtn.href = event.url;
+                linkBtn.target = '_blank';
+                linkBtn.rel = 'noopener noreferrer';
+                linkBtn.style.cssText = 'display: inline-block; padding: 0.75rem 1.5rem; background: var(--primary-color); color: white; text-decoration: none; border-radius: 8px; font-weight: 500; transition: background 0.2s;';
+                linkBtn.textContent = '➕ Add to Google Calendar';
+                linkBtn.onmouseover = function() { this.style.background = 'var(--secondary-color)'; };
+                linkBtn.onmouseout = function() { this.style.background = 'var(--primary-color)'; };
+                eventDiv.appendChild(linkBtn);
+                
+                eventsList.appendChild(eventDiv);
+            });
+            
+            document.getElementById('calendarModal').classList.add('active');
         }
 
         // Show feedback modal
